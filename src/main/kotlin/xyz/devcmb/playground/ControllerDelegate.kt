@@ -8,6 +8,9 @@ object ControllerDelegate {
     private val controllers: HashMap<String, IController> = HashMap()
 
     fun registerAllControllers() {
+        registerController("protocolController", ProtocolController())
+        registerController("listenerController", ListenerController())
+
         if(Constants.IS_DEVELOPMENT) {
             registerController("debugController", DebugController())
         }

@@ -1,5 +1,7 @@
 package xyz.devcmb.playground
 
+import com.comphenix.protocol.ProtocolLibrary
+import com.comphenix.protocol.ProtocolManager
 import org.bukkit.plugin.java.JavaPlugin
 import xyz.devcmb.invcontrol.InvControlManager
 import java.util.logging.Logger
@@ -8,6 +10,7 @@ class ParkourPlayground : JavaPlugin() {
     companion object {
         lateinit var plugin: ParkourPlayground
         lateinit var pluginLogger: Logger
+        lateinit var protocolManager: ProtocolManager
     }
 
     override fun onEnable() {
@@ -15,6 +18,7 @@ class ParkourPlayground : JavaPlugin() {
         pluginLogger = logger
 
         InvControlManager.setPlugin(this)
+        protocolManager = ProtocolLibrary.getProtocolManager()
 
         ControllerDelegate.registerAllControllers()
     }
