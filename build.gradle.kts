@@ -1,3 +1,7 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+
 plugins {
     kotlin("jvm") version "2.3.20-Beta2"
     id("com.gradleup.shadow") version "8.3.0"
@@ -19,7 +23,6 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.github.29cmb.InvControl:invcontrol-core:v0.1.6")
-    implementation("team.unnamed:creative-api:1.7.3")
 }
 
 tasks {
@@ -27,6 +30,7 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
+        dependsOn("build")
         minecraftVersion("1.21.11")
     }
 }
@@ -37,7 +41,46 @@ kotlin {
 }
 
 tasks.build {
-    dependsOn("shadowJar")
+    dependsOn("updateVersion", "shadowJar")
+}
+
+fun padLeftZeros(inputString: String, length: Int): String {
+    if (inputString.length >= length) return inputString
+    val sb = StringBuilder()
+    while (sb.length < length - inputString.length) {
+        sb.append('0')
+    }
+    sb.append(inputString)
+    return sb.toString()
+}
+
+tasks.register("updateVersion") {
+    doLast {
+        val versionFile = file("src/main/kotlin/xyz/devcmb/playground/Constants.kt")
+        val versionCounterFile = file("versionCounter.txt")
+        val newVersion = project.version.toString()
+
+        var counter = 0
+        if (versionCounterFile.exists()) {
+            counter = versionCounterFile.readText().trim().toInt(16)
+        }
+
+        counter++
+        val hexCounter = counter.toString(16)
+        val updatedVersion = "$newVersion-${padLeftZeros(hexCounter, 6)}"
+        val content = versionFile.readText()
+        val updatedContent = content.replace(
+            Regex("""(const val VERSION: String = ")([^"]+)(")"""),
+            "$1$updatedVersion$3"
+        )
+
+        Files.write(
+            Paths.get(versionFile.toURI()),
+            updatedContent.toByteArray(),
+            StandardOpenOption.TRUNCATE_EXISTING
+        )
+        versionCounterFile.writeText(hexCounter)
+    }
 }
 
 tasks.processResources {

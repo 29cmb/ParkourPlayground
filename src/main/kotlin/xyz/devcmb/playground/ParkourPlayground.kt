@@ -1,13 +1,25 @@
 package xyz.devcmb.playground
 
 import org.bukkit.plugin.java.JavaPlugin
+import xyz.devcmb.invcontrol.InvControlManager
+import java.util.logging.Logger
 
 class ParkourPlayground : JavaPlugin() {
+    companion object {
+        lateinit var plugin: ParkourPlayground
+        lateinit var pluginLogger: Logger
+    }
+
     override fun onEnable() {
-        // Plugin startup logic
+        plugin = this
+        pluginLogger = logger
+
+        InvControlManager.setPlugin(this)
+
+        ControllerDelegate.registerAllControllers()
     }
 
     override fun onDisable() {
-        // Plugin shutdown logic
+        ControllerDelegate.cleanupControllers()
     }
 }
