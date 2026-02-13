@@ -2,6 +2,9 @@ package xyz.devcmb.playground.listeners
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.World
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
@@ -13,6 +16,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.util.Format
 
 class PlayerListeners : Listener {
@@ -36,6 +40,16 @@ class PlayerListeners : Listener {
             true,
             false,
             false
+        ))
+
+        val config = ParkourPlayground.plugin.config
+        val position = config.getList("lobby.position")!!
+
+        player.teleport(Location(
+            Bukkit.getWorld(config.getString("lobby.world")!!),
+            position.get(0) as Double,
+            position.get(1) as Double,
+            position.get(2) as Double
         ))
     }
 

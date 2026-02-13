@@ -10,10 +10,8 @@ object ControllerDelegate {
     fun registerAllControllers() {
         registerController("protocolController", ProtocolController())
         registerController("listenerController", ListenerController())
-
-        if(Constants.IS_DEVELOPMENT) {
-            registerController("debugController", DebugController())
-        }
+        registerController("loopController", LoopController())
+        registerController("uiController", UIController())
     }
 
     fun registerController(id: String, controller: IController) {

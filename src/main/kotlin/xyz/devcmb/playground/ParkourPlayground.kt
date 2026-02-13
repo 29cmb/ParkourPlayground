@@ -20,6 +20,8 @@ class ParkourPlayground : JavaPlugin() {
         InvControlManager.setPlugin(this)
         protocolManager = ProtocolLibrary.getProtocolManager()
 
+        saveDefaultConfig()
+
         ControllerDelegate.registerAllControllers()
     }
 
