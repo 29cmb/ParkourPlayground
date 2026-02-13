@@ -3,8 +3,10 @@ package xyz.devcmb.playground.controllers
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.ui.PlayerUIDelegate
 
+@Controller("uiController")
 class UIController : IController {
     val playerControllers: ArrayList<PlayerUIDelegate> = ArrayList()
 

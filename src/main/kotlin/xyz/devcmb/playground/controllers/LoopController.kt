@@ -2,7 +2,9 @@ package xyz.devcmb.playground.controllers
 
 import org.bukkit.Bukkit
 import xyz.devcmb.playground.ParkourPlayground
+import xyz.devcmb.playground.annotations.Controller
 
+@Controller("loopController")
 class LoopController : IController {
     var currentState: GameState = GameState.PRELOAD
     override fun init() {

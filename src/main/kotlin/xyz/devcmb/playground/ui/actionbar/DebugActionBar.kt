@@ -43,12 +43,8 @@ class DebugActionBar(val player: Player) : IActionBar {
                 .font(UserInterfaceUtility.fonts["normal"]),
             Component.text("v" + Constants.VERSION)
                 .color(NamedTextColor.GRAY)
-                .append(Component.text(" (inde)").color(NamedTextColor.GOLD))
+                .append(Component.text(" (indev)").color(NamedTextColor.GOLD))
                 .font(UserInterfaceUtility.fonts["size10shift11"]),
-            Component.text("GameState: ")
-                .color(NamedTextColor.GREEN)
-                .append(Component.text(loopController.currentState.name).color(NamedTextColor.YELLOW))
-                .font(UserInterfaceUtility.fonts["size10shift22"]),
         )
     }
 }
