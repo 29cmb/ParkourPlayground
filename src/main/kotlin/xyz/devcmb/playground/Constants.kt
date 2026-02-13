@@ -1,6 +1,6 @@
 package xyz.devcmb.playground;
 
 object Constants {
-    const val VERSION: String = "1.0.0-000056"
+    const val VERSION: String = "1.0.0-00005d"
     val IS_DEVELOPMENT: Boolean = true
 }

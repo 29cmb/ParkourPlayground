@@ -19,6 +19,7 @@ object ControllerDelegate {
 
         reflections.getTypesAnnotatedWith(Controller::class.java)
             .filter { IController::class.java.isAssignableFrom(it) }
+            .sortedByDescending { it.getAnnotation(Controller::class.java).priority.value }
             .forEach { clazz ->
                 val annotation = clazz.getAnnotation(Controller::class.java)
                 val controllerClass = clazz as Class<out IController>

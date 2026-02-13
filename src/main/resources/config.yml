@@ -1,3 +1,5 @@
 lobby:
   world: ""
   position: [0,0,0]
+game:
+  intermission_length: 30
