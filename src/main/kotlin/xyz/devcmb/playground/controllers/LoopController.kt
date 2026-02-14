@@ -7,7 +7,7 @@ import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 
-@Controller("loopController", Controller.Priority.HIGHEST)
+@Controller("loopController", Controller.Priority.HIGH)
 class LoopController : IController {
     var currentState: GameState = GameState.PRELOAD
         set(value) {
@@ -80,10 +80,11 @@ class LoopController : IController {
     }
 
     fun preGame() {
-
+        currentState = GameState.PREGAME
     }
 
     fun gameOn() {
+        currentState = GameState.GAME_ON
     }
 
     enum class GameState {

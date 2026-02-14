@@ -7,7 +7,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.ui.PlayerUIDelegate
 
-@Controller("uiController")
+@Controller("uiController", priority = Controller.Priority.MEDIUM)
 class UIController : IController {
     val playerControllers: ArrayList<PlayerUIDelegate> = ArrayList()
 
@@ -23,12 +23,5 @@ class UIController : IController {
     @EventHandler
     fun playerQuitEvent(event: PlayerQuitEvent) {
         playerControllers.removeIf({ it.player == event.player })
-    }
-
-    @EventHandler
-    fun tickEvent(event: ServerTickStartEvent) {
-        playerControllers.forEach {
-            it.tick(event)
-        }
     }
 }

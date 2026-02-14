@@ -10,12 +10,11 @@ import xyz.devcmb.playground.ui.UserInterfaceUtility
 
 class DebugInfoBossBar(val player: Player) : IBossBar {
     override val id: String = "debugInfoBossBar"
-    override val height: Int = 3
+    override val height: Int = 1
 
     override fun getComponent(): Component {
         val loopController = ControllerDelegate.getController("loopController") as LoopController
         return Component.text("GameState: ", NamedTextColor.AQUA)
             .append(Component.text(loopController.currentState.name, NamedTextColor.WHITE))
-            .font(UserInterfaceUtility.fonts["size20shift10"])
     }
 }

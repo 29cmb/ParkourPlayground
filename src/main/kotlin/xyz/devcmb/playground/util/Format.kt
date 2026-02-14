@@ -3,7 +3,7 @@ package xyz.devcmb.playground.util
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
-import java.util.Map
+import kotlin.math.floor
 
 object Format {
     fun format(string: String, type: FormatType): Component {
@@ -30,35 +30,41 @@ object Format {
         return Component.text(player.name)
     }
 
+    fun formatTime(time: Int) : String {
+        val minutes: Int = floor(time / 60.0).toInt()
+        val seconds: Int = time % 60
+        return String.format("%d:%02d", minutes, seconds)
+    }
+
     enum class FormatType(val data: MutableMap<String?, Any?>) {
         SUCCESS(
-            Map.of<String?, Any?>(
-                "prefix", "✅",
-                "color", NamedTextColor.GREEN
+            hashMapOf(
+                "prefix" to "✅",
+                "color" to NamedTextColor.GREEN
             )
         ),
         WARNING(
-            Map.of<String?, Any?>(
-                "prefix", "⚠️",
-                "color", NamedTextColor.YELLOW
+            hashMapOf(
+                "prefix" to "⚠️",
+                "color" to NamedTextColor.YELLOW
             )
         ),
         ERROR(
-            Map.of<String?, Any?>(
-                "prefix", "❌",
-                "color", NamedTextColor.DARK_RED
+            hashMapOf(
+                "prefix" to "❌",
+                "color" to NamedTextColor.DARK_RED
             )
         ),
         INVALID(
-            Map.of<String?, Any?>(
-                "prefix", "❓",
-                "color", NamedTextColor.RED
+            hashMapOf(
+                "prefix" to "❓",
+                "color" to NamedTextColor.RED
             )
         ),
         INFO(
-            Map.of<String?, Any?>(
-                "prefix", "ℹ️",
-                "color", NamedTextColor.AQUA
+            hashMapOf(
+                "prefix" to "ℹ️",
+                "color" to NamedTextColor.AQUA
             )
         )
     }

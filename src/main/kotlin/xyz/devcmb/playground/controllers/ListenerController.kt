@@ -6,7 +6,7 @@ import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.listeners.PlayerListeners
 
-@Controller("listenerController")
+@Controller("listenerController", priority = Controller.Priority.LOWEST)
 class ListenerController : IController {
     override fun init() {
         registerListener(PlayerListeners())

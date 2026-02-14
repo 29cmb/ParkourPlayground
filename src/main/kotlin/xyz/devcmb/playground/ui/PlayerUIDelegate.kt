@@ -1,8 +1,10 @@
 package xyz.devcmb.playground.ui
 
 import com.destroystokyo.paper.event.server.ServerTickStartEvent
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.Constants
@@ -10,6 +12,7 @@ import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.ui.actionbar.DebugActionBar
 import xyz.devcmb.playground.ui.actionbar.IActionBar
 import xyz.devcmb.playground.ui.bossbar.DebugInfoBossBar
+import xyz.devcmb.playground.ui.bossbar.GameStateBossBar
 import xyz.devcmb.playground.ui.bossbar.IBossBar
 
 class PlayerUIDelegate(val player: Player) {
@@ -25,11 +28,23 @@ class PlayerUIDelegate(val player: Player) {
         actionBars.add(DebugActionBar(player))
 
         bossBars.add(DebugInfoBossBar(player))
+        bossBars.add(GameStateBossBar(player))
+
+        activateBossBar("gameStateBossBar")
 
         if(Constants.IS_DEVELOPMENT) {
             activateActionBar("debugActionBar")
             activateBossBar("debugInfoBossBar")
         }
+
+        Bukkit.getScheduler().runTaskTimer(ParkourPlayground.plugin, Runnable {
+            bossBars.forEach {
+                if(activeBossBars.containsKey(it.id)) {
+                    val bar = activeBossBars[it.id]!!
+                    bar.name(it.getComponent())
+                }
+            }
+        }, 0, 5)
     }
 
     fun activateActionBar(id: String) {
@@ -65,6 +80,7 @@ class PlayerUIDelegate(val player: Player) {
         activeBossBars[id] = bossBar
         paddingBossBars[id] = arrayListOf()
         for(i in 0..(bar.height-1)) {
+            if(i == 0) continue;
             val paddingBossBar = BossBar.bossBar(
                 Component.empty(),
                 0f,
@@ -76,11 +92,25 @@ class PlayerUIDelegate(val player: Player) {
         }
     }
 
-    fun tick(event: ServerTickStartEvent) {
-        bossBars.forEach {
-            if(activeBossBars.containsKey(it.id)) {
-                it.tick(activeBossBars[it.id]!!)
+    fun disableBossBar(id: String) {
+        if(!activeBossBars.containsKey(id)) return
+
+        val bar = bossBars.find { it.id == id }
+        if(bar == null) throw IllegalArgumentException("Unknown BossBar ID: $id")
+
+        val activeBar = activeBossBars[id]!!
+        activeBar.viewers().forEach {
+            activeBar.removeViewer(it as Audience)
+        }
+
+        val paddingBars = paddingBossBars[id]!!
+        paddingBars.forEach { bar ->
+            bar.viewers().forEach {
+                bar.removeViewer(it as Audience)
             }
         }
+
+        activeBossBars.remove(id)
+        paddingBossBars.remove(id)
     }
 }

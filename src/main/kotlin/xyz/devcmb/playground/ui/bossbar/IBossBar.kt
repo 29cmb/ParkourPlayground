@@ -8,5 +8,4 @@ interface IBossBar {
     // The amount of bossbars to reserve (to prevent overlap if multiple are visible)
     val height: Int
     fun getComponent(): Component
-    fun tick(bossBar: BossBar){}
 }
