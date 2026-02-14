@@ -301,34 +301,26 @@ object UserInterfaceUtility {
         return result.toString()
     }
 
-    fun getNegativeTextCenter(component: Component, size: Float, oversample: Float): Component {
+    fun getTextCenter(component: Component, size: Float, oversample: Float): Int {
         val text = PlainTextComponentSerializer.plainText().serialize(component)
         var space = 0.0
         for(c in text) {
             space += getScaledWidth(c, size, oversample)
         }
 
-        return NegativeSpace((space / 2.0).roundToInt())
+        return (space / 2.0).roundToInt()
     }
 
-    fun getPositiveTextCenter(component: Component, size: Float, oversample: Float): Component {
-        val text = PlainTextComponentSerializer.plainText().serialize(component)
-        var space = 0.0
-        for(c in text) {
-            space += getScaledWidth(c, size, oversample)
-        }
-
-        return PositiveSpace((space / 2.0).roundToInt())
-    }
-
-    // TODO: Fix this to work with longer length titles
+    // TODO: Make sure this is centered about the player's hotbar
     fun MultiLineCenteredText(size: Float, oversample: Float, vararg components: Component) : Component {
         var fullComponent = Component.empty()
         var lastComponent = components[0]
 
         components.forEachIndexed { index, component ->
             if(index != 0) {
-                fullComponent = fullComponent.append(getNegativeTextCenter(lastComponent, size, oversample))
+                fullComponent = fullComponent.append(
+                    NegativeSpace((getTextCenter(lastComponent, size, oversample) + getTextCenter(component, size, oversample)) / 2)
+                )
             }
 
             fullComponent = fullComponent.append(component)
@@ -339,7 +331,7 @@ object UserInterfaceUtility {
     }
 
     private fun getScaledWidth(char: Char, newFontSize: Float, newOversample: Float): Double {
-        val baseWidth = (defaultFontWidths[char] ?: 14).toDouble()
+        val baseWidth = (defaultFontWidths[char] ?: 0).toDouble()
         return (baseWidth / 20.0) * newOversample * (newFontSize / 10.0)
     }
 }
