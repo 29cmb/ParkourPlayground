@@ -139,7 +139,8 @@ object UserInterfaceUtility {
         "normal" to NamespacedKey("playground", "normal"),
         "size10shift11" to NamespacedKey("playground", "size10shift11"),
         "size10shift22" to NamespacedKey("playground", "size10shift22"),
-        "size20shift10" to NamespacedKey("playground", "size20shift10")
+        "size20shift10" to NamespacedKey("playground", "size20shift10"),
+        "size16shift6" to NamespacedKey("playground", "size16shift6"),
     )
 
     val defaultFontWidths = mapOf(

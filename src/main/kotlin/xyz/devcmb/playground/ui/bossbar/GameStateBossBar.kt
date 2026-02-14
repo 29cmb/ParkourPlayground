@@ -20,6 +20,6 @@ class GameStateBossBar(val player: Player) : IBossBar {
                 Component.text("Intermission - ${Format.formatTime(loopController.countdown)}")
 
             else -> Component.text("Loading...")
-        }.font(UserInterfaceUtility.fonts["size20shift10"])
+        }.font(UserInterfaceUtility.fonts["size16shift6"])
     }
 }

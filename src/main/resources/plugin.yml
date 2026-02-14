@@ -1,8 +1,9 @@
 name: ParkourPlayground
 version: '1.0.0'
 main: xyz.devcmb.playground.ParkourPlayground
-api-version: '1.21'
+api-version: '1.21.11'
 prefix: ParkourPlayground
 authors: [ DevCmb ]
 description: An open-source parkour server plugin
 website: devcmb.xyz
+depend: [ Multiverse-Core, WorldEdit, ProtocolLib ]
