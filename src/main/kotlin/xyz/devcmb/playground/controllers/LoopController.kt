@@ -10,6 +10,11 @@ import xyz.devcmb.playground.annotations.Controller
 @Controller("loopController", Controller.Priority.HIGHEST)
 class LoopController : IController {
     var currentState: GameState = GameState.PRELOAD
+        set(value) {
+            ParkourPlayground.pluginLogger.info("Transitioning GameState to ${value.name}")
+            field = value
+        }
+
     var playerWaitingRunnable: BukkitRunnable? = null
     var countdownRunnable: BukkitRunnable? = null
     var countdown: Int = 30
@@ -20,10 +25,10 @@ class LoopController : IController {
     }
 
     override fun init() {
-        pregame()
+        setup()
     }
 
-    fun pregame() {
+    fun setup() {
         if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) {
             playerWaiting()
             return
@@ -37,10 +42,10 @@ class LoopController : IController {
 
         playerWaitingRunnable = object : BukkitRunnable() {
             override fun run() {
-                if(Bukkit.getOnlinePlayers().size < 2) return;
+                if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) return;
                 cancel()
                 playerWaitingRunnable = null
-                pregame()
+                setup()
             }
         }
         playerWaitingRunnable!!.runTaskTimer(ParkourPlayground.plugin, 0, 20)
@@ -52,7 +57,7 @@ class LoopController : IController {
 
         countdownRunnable = object : BukkitRunnable() {
             override fun run() {
-                if(Bukkit.getOnlinePlayers().size < 2) {
+                if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) {
                     cancel()
                     countdownRunnable = null
                     countdown = intermissionLength
@@ -64,7 +69,7 @@ class LoopController : IController {
                     cancel()
                     countdownRunnable = null
                     countdown = intermissionLength
-                    gameStart()
+                    preGame()
                     return
                 }
 
@@ -74,8 +79,11 @@ class LoopController : IController {
         countdownRunnable!!.runTaskTimer(ParkourPlayground.plugin, 0, 20)
     }
 
-    fun gameStart() {
-        // TODO
+    fun preGame() {
+
+    }
+
+    fun gameOn() {
     }
 
     enum class GameState {

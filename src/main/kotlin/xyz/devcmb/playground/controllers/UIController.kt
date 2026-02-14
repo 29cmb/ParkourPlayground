@@ -1,5 +1,6 @@
 package xyz.devcmb.playground.controllers
 
+import com.destroystokyo.paper.event.server.ServerTickStartEvent
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -22,5 +23,12 @@ class UIController : IController {
     @EventHandler
     fun playerQuitEvent(event: PlayerQuitEvent) {
         playerControllers.removeIf({ it.player == event.player })
+    }
+
+    @EventHandler
+    fun tickEvent(event: ServerTickStartEvent) {
+        playerControllers.forEach {
+            it.tick(event)
+        }
     }
 }

@@ -139,6 +139,7 @@ object UserInterfaceUtility {
         "normal" to NamespacedKey("playground", "normal"),
         "size10shift11" to NamespacedKey("playground", "size10shift11"),
         "size10shift22" to NamespacedKey("playground", "size10shift22"),
+        "size20shift10" to NamespacedKey("playground", "size20shift10")
     )
 
     val defaultFontWidths = mapOf(
@@ -301,24 +302,20 @@ object UserInterfaceUtility {
 
     fun getNegativeTextCenter(component: Component, size: Float, oversample: Float): Component {
         val text = PlainTextComponentSerializer.plainText().serialize(component)
-        ParkourPlayground.pluginLogger.info(text)
         var space = 0.0
         for(c in text) {
             space += getScaledWidth(c, size, oversample)
         }
-        ParkourPlayground.pluginLogger.info(space.toString())
 
         return NegativeSpace((space / 2.0).roundToInt())
     }
 
     fun getPositiveTextCenter(component: Component, size: Float, oversample: Float): Component {
         val text = PlainTextComponentSerializer.plainText().serialize(component)
-        ParkourPlayground.pluginLogger.info(text)
         var space = 0.0
         for(c in text) {
             space += getScaledWidth(c, size, oversample)
         }
-        ParkourPlayground.pluginLogger.info(space.toString())
 
         return PositiveSpace((space / 2.0).roundToInt())
     }
