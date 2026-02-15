@@ -21,6 +21,9 @@ class GameStateBossBar(val player: Player) : IBossBar {
             LoopController.GameState.PREPARING_WORLD ->
                 Component.text("Loading world...")
 
+
+            LoopController.GameState.PAUSED ->
+                Component.text("Paused", NamedTextColor.YELLOW)
             LoopController.GameState.ERROR ->
                 Component.text("Error - Check Console")
             else -> Component.text("Loading...")

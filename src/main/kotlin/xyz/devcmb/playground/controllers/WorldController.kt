@@ -48,6 +48,8 @@ class WorldController : IController {
                     Bukkit.unloadWorld(file.name, false)
                 }
 
+                // my savior
+                // https://www.spigotmc.org/threads/cant-delete-world-folder-after-unloading-it.314857/
                 fun deleteDir(file2: File) {
                     val contents = file2.listFiles()
                     if (contents != null) {

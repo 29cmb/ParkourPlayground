@@ -25,6 +25,7 @@ class LoopController : IController {
             ParkourPlayground.pluginLogger.info("Transitioning GameState to ${value.name}")
             field = value
         }
+    var prePauseState: GameState? = null
 
     var playerWaitingRunnable: BukkitRunnable? = null
     var countdownRunnable: BukkitRunnable? = null
@@ -55,11 +56,23 @@ class LoopController : IController {
         intermission()
     }
 
+    fun pauseLoop() {
+        prePauseState = currentState
+        currentState = GameState.PAUSED
+    }
+
+    fun unpauseLoop() {
+        currentState = prePauseState!!
+        prePauseState = null
+    }
+
     fun playerWaiting() {
         currentState = GameState.PLAYER_WAITING
 
         playerWaitingRunnable = object : BukkitRunnable() {
             override fun run() {
+                if(currentState == GameState.PAUSED) return;
+
                 if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) return;
                 cancel()
                 playerWaitingRunnable = null
@@ -75,6 +88,8 @@ class LoopController : IController {
 
         countdownRunnable = object : BukkitRunnable() {
             override fun run() {
+                if(currentState == GameState.PAUSED) return;
+
                 if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) {
                     cancel()
                     countdownRunnable = null
@@ -132,6 +147,7 @@ class LoopController : IController {
         GAME_ON,
         GAME_END,
         CLEANUP,
+        PAUSED,
         ERROR
     }
 

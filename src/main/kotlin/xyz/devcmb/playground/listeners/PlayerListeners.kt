@@ -14,6 +14,7 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.playground.ParkourPlayground
@@ -51,6 +52,19 @@ class PlayerListeners : Listener {
             position.get(1) as Double,
             position.get(2) as Double
         ))
+    }
+
+    @EventHandler
+    fun onPlayerRespawnEvent(event: PlayerRespawnEvent) {
+        val config = ParkourPlayground.plugin.config
+        val position = config.getList("lobby.position")!!
+
+        event.respawnLocation = Location(
+            Bukkit.getWorld(config.getString("lobby.world")!!),
+            position.get(0) as Double,
+            position.get(1) as Double,
+            position.get(2) as Double
+        )
     }
 
     @EventHandler

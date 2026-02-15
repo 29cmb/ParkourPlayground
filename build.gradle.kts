@@ -19,6 +19,7 @@ repositories {
     maven("https://jitpack.io")
     maven("https://repo.onarandombox.com/content/groups/public/")
     maven("https://maven.enginehub.org/repo/")
+    maven("https://repo.panda-lang.org/releases")
 }
 
 dependencies {
@@ -29,6 +30,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.github.29cmb.InvControl:invcontrol-core:v0.1.6")
     implementation("commons-io:commons-io:2.14.0")
+    implementation("dev.rollczi:litecommands-bukkit:3.10.9")
 }
 
 tasks {
@@ -44,6 +46,10 @@ tasks {
 val targetJavaVersion = 21
 kotlin {
     jvmToolchain(targetJavaVersion)
+}
+
+tasks.compileJava {
+    options.compilerArgs.add("-parameters")
 }
 
 tasks.build {
