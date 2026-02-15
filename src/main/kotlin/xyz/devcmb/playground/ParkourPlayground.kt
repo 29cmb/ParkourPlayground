@@ -4,6 +4,7 @@ import com.comphenix.protocol.ProtocolLibrary
 import com.comphenix.protocol.ProtocolManager
 import org.bukkit.plugin.java.JavaPlugin
 import xyz.devcmb.invcontrol.InvControlManager
+import xyz.devcmb.playground.controllers.WorldController
 import java.util.logging.Logger
 
 class ParkourPlayground : JavaPlugin() {

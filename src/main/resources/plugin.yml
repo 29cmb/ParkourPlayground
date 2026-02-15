@@ -6,4 +6,4 @@ prefix: ParkourPlayground
 authors: [ DevCmb ]
 description: An open-source parkour server plugin
 website: devcmb.xyz
-depend: [ Multiverse-Core, WorldEdit, ProtocolLib ]
+depend: [ WorldEdit, ProtocolLib ]

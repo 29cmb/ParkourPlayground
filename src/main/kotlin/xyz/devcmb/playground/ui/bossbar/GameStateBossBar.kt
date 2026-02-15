@@ -18,7 +18,11 @@ class GameStateBossBar(val player: Player) : IBossBar {
                 Component.text("Waiting for players")
             LoopController.GameState.INTERMISSION ->
                 Component.text("Intermission - ${Format.formatTime(loopController.countdown)}")
+            LoopController.GameState.PREPARING_WORLD ->
+                Component.text("Loading world...")
 
+            LoopController.GameState.ERROR ->
+                Component.text("Error - Check Console")
             else -> Component.text("Loading...")
         }.font(UserInterfaceUtility.fonts["size16shift6"])
     }

@@ -1,11 +1,22 @@
 package xyz.devcmb.playground.controllers
 
+import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.World
+import org.bukkit.WorldCreator
+import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.Constants
+import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ParkourPlayground
+import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
+import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 
 @Controller("loopController", Controller.Priority.HIGH)
 class LoopController : IController {
@@ -18,6 +29,9 @@ class LoopController : IController {
     var playerWaitingRunnable: BukkitRunnable? = null
     var countdownRunnable: BukkitRunnable? = null
     var countdown: Int = 30
+    var world: World? = null
+
+    val playerStates: HashMap<Player, PlayerState> = HashMap()
 
     companion object {
         @field:Configurable("game.intermission_length")
@@ -26,6 +40,10 @@ class LoopController : IController {
 
     override fun init() {
         setup()
+    }
+
+    override fun cleanup() {
+
     }
 
     fun setup() {
@@ -69,7 +87,7 @@ class LoopController : IController {
                     cancel()
                     countdownRunnable = null
                     countdown = intermissionLength
-                    preGame()
+                    preparingWorld()
                     return
                 }
 
@@ -79,8 +97,26 @@ class LoopController : IController {
         countdownRunnable!!.runTaskTimer(ParkourPlayground.plugin, 0, 20)
     }
 
+    fun preparingWorld() {
+        currentState = GameState.PREPARING_WORLD
+        val worldController: WorldController = ControllerDelegate.getController("worldController") as WorldController
+
+        try {
+            this.world = worldController.setupGameWorld()
+        } catch(e: WorldSetupException) {
+            ParkourPlayground.pluginLogger.severe("An error occurred trying to setup the gameplay world: ${e.message}")
+            currentState = GameState.ERROR
+        }
+
+        preGame()
+    }
+
     fun preGame() {
         currentState = GameState.PREGAME
+        Bukkit.getOnlinePlayers().forEach { player ->
+            playerStates.put(player, PlayerState.PREGAME)
+            player.teleport(Location(world, 0.0, 65.0, 0.0))
+        }
     }
 
     fun gameOn() {
@@ -91,9 +127,18 @@ class LoopController : IController {
         PRELOAD,
         PLAYER_WAITING,
         INTERMISSION,
+        PREPARING_WORLD,
         PREGAME,
         GAME_ON,
         GAME_END,
-        CLEANUP
+        CLEANUP,
+        ERROR
+    }
+
+    enum class PlayerState {
+        PREGAME,
+        PROGRESSING,
+        COMPLETED,
+        DEAD
     }
 }

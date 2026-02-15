@@ -24,11 +24,11 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("net.dmulloy2:ProtocolLib:5.4.0")
-    compileOnly("org.mvplugins.multiverse.core:multiverse-core:5.0.0-SNAPSHOT")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.0")
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.github.29cmb.InvControl:invcontrol-core:v0.1.6")
+    implementation("commons-io:commons-io:2.14.0")
 }
 
 tasks {
