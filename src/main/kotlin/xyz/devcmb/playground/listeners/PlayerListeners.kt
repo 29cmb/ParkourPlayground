@@ -35,14 +35,6 @@ class PlayerListeners : Listener {
         player.foodLevel = 20
         player.saturation = 0f
 
-        player.addPotionEffect(PotionEffect(
-            PotionEffectType.HUNGER,
-            Int.MAX_VALUE, 0,
-            true,
-            false,
-            false
-        ))
-
         val config = ParkourPlayground.plugin.config
         val position = config.getList("lobby.position")!!
 
@@ -54,10 +46,15 @@ class PlayerListeners : Listener {
         ))
     }
 
+
     @EventHandler
     fun onPlayerRespawnEvent(event: PlayerRespawnEvent) {
         val config = ParkourPlayground.plugin.config
         val position = config.getList("lobby.position")!!
+
+        val player = event.player
+        player.foodLevel = 20
+        player.saturation = 0f
 
         event.respawnLocation = Location(
             Bukkit.getWorld(config.getString("lobby.world")!!),

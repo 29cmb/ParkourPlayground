@@ -8,6 +8,7 @@ import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.commands.admin.*
 import xyz.devcmb.playground.commands.arguments.TemplateCommandArgument
+import xyz.devcmb.playground.commands.dev.WorldCommand
 
 @Controller("commandController", Controller.Priority.LOWEST)
 class CommandController : IController {

@@ -9,6 +9,8 @@ import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 import java.io.File
+import java.io.PrintWriter
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
@@ -32,6 +34,10 @@ class WorldController : IController {
     var lobbyBukkitWorld: World? = null
 
     override fun init() {
+        // If the server crashes and doesn't save, it doesn't clear worlds
+        // This is the workaround, do both on open and cleanup
+        cleanupWorlds()
+
         lobbyBukkitWorld = Bukkit.getWorld(lobbyWorld)
         if(lobbyBukkitWorld == null) {
             if(!Files.exists(Path.of(lobbyWorld))) {
@@ -83,13 +89,47 @@ class WorldController : IController {
     // yes this is """inspired""" by mcc island
     fun createTemporaryWorldFromTemplate(templateDir: File): World {
         val worldName = "temp_world_${UUID.randomUUID().toString().replace("-", "_")}"
+        val destination = File(Bukkit.getWorldContainer(), worldName)
 
         FileUtils.copyDirectory(
             templateDir,
-            File(Bukkit.getWorldContainer(), worldName)
+            destination
+        )
+
+        Files.write(
+            File(destination, "template.txt").toPath(),
+            listOf(templateDir.name),
+            StandardCharsets.UTF_8
         )
 
         return Bukkit.createWorld(WorldCreator(worldName))!!
+    }
+
+    fun saveWorldToTemplate(world: World) = saveWorldToTemplate(world, null)
+
+    fun saveWorldToTemplate(world: World, templateName: String?) {
+        var templateWorldName = templateName
+
+        val worldFolder = File(Bukkit.getWorldContainer(), world.name)
+        if(!worldFolder.exists()) {
+            throw WorldSetupException("World directory does not exist")
+        }
+
+        val templatesWorldFolder = File(templateRootPath, templatesWorldsPath)
+        if(!templatesWorldFolder.exists()) {
+            throw WorldSetupException("Templates world path doesn't exist")
+        }
+
+        if(templateWorldName == null) {
+            val templateFile = File(worldFolder, "template.txt")
+            if(!templateFile.exists()) {
+                throw WorldSetupException("Template identification file does not exist")
+            }
+
+            templateWorldName = templateFile.readText().replace("\n", "").replace("\r", "");
+        }
+
+        FileUtils.copyDirectory(worldFolder, templatesWorldFolder)
     }
 
     fun getTemplateWorlds(): ArrayList<File> {
@@ -109,5 +149,7 @@ class WorldController : IController {
         return worlds
     }
 
-    class TemplateWorld(val folder: File) {}
+
+
+    data class TemplateWorld(val folder: File)
 }
