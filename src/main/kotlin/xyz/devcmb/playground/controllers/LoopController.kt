@@ -2,6 +2,7 @@ package xyz.devcmb.playground.controllers
 
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.WorldCreator
@@ -37,6 +38,9 @@ class LoopController : IController {
     companion object {
         @field:Configurable("game.intermission_length")
         var intermissionLength: Int = 30
+
+        @field:Configurable("game.starting_position")
+        var startPosition: List<Double> = listOf(-0.5, 67.0, -0.5)
     }
 
     override fun init() {
@@ -130,7 +134,8 @@ class LoopController : IController {
         currentState = GameState.PREGAME
         Bukkit.getOnlinePlayers().forEach { player ->
             playerStates.put(player, PlayerState.PREGAME)
-            player.teleport(Location(world, 0.0, 65.0, 0.0))
+            player.teleport(Location(world, startPosition.get(0), startPosition.get(1), startPosition.get(2)))
+            player.gameMode = GameMode.ADVENTURE
         }
     }
 

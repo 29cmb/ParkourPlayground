@@ -3,7 +3,7 @@ lobby:
   position: [0.0,67.0,0.0]
 game:
   intermission_length: 30
-  gameplay_world: "game"
+  starting_position: [-0.5,67.0,-0.5]
 templates:
   root_path: "templates"
   worlds_path: "worlds"

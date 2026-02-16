@@ -2,6 +2,7 @@ package xyz.devcmb.playground.controllers
 
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import xyz.devcmb.playground.ParkourPlayground
@@ -102,6 +103,11 @@ class WorldController : IController {
             StandardCharsets.UTF_8
         )
 
+        val idFile = File(destination, "uid.dat")
+        if(idFile.exists()) {
+            idFile.delete()
+        }
+
         return Bukkit.createWorld(WorldCreator(worldName))!!
     }
 
@@ -114,6 +120,20 @@ class WorldController : IController {
         if(!worldFolder.exists()) {
             throw WorldSetupException("World directory does not exist")
         }
+
+        val config = ParkourPlayground.plugin.config
+        val position = config.getList("lobby.position")!!
+
+        world.players.forEach {
+            it.teleport(Location(
+                lobbyBukkitWorld!!,
+                position.get(0) as Double,
+                position.get(1) as Double,
+                position.get(2) as Double
+            ))
+        }
+
+        Bukkit.unloadWorld(world, true)
 
         val templatesWorldFolder = File(templateRootPath, templatesWorldsPath)
         if(!templatesWorldFolder.exists()) {
@@ -129,7 +149,18 @@ class WorldController : IController {
             templateWorldName = templateFile.readText().replace("\n", "").replace("\r", "");
         }
 
-        FileUtils.copyDirectory(worldFolder, templatesWorldFolder)
+        Bukkit.getScheduler().runTaskLater(ParkourPlayground.plugin, Runnable {
+            val templateWorldDir = File(
+                templatesWorldFolder.toPath().toString(),
+                templateWorldName
+            )
+            FileUtils.copyDirectory(worldFolder, templateWorldDir)
+
+            val idFile = File(templateWorldDir, "uid.dat")
+            if(idFile.exists()) {
+                idFile.delete()
+            }
+        }, 60L)
     }
 
     fun getTemplateWorlds(): ArrayList<File> {
@@ -148,8 +179,6 @@ class WorldController : IController {
 
         return worlds
     }
-
-
 
     data class TemplateWorld(val folder: File)
 }

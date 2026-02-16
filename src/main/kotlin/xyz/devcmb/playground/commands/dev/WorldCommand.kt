@@ -38,13 +38,14 @@ class WorldCommand {
     @Execute(name = "template save")
     fun saveTemplate(@Context sender: CommandSender, @Arg world: World, @Flag("-c", "--confirm") confirm: Boolean) {
         if(!confirm) {
-            sender.sendMessage(Component.text("This will override the existing template! Use the --confirm or -c flag to continue!"))
+            sender.sendMessage(Component.text("This will override the existing template! Use the --confirm or -c flag to continue!", NamedTextColor.YELLOW))
             return
         }
 
         val worldController = ControllerDelegate.getController("worldController") as WorldController
         try {
             worldController.saveWorldToTemplate(world)
+            sender.sendMessage(Component.text("Saved world template successfully!", NamedTextColor.GREEN))
         } catch(e: Exception) {
             sender.sendMessage(Component.text("An error occurred when trying to save the template world: ${e.message}", NamedTextColor.RED))
         }
