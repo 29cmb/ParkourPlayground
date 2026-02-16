@@ -1,6 +1,6 @@
 lobby:
   world: "hub"
-  position: [0,65,0]
+  position: [0.0,67.0,0.0]
 game:
   intermission_length: 30
   gameplay_world: "game"
