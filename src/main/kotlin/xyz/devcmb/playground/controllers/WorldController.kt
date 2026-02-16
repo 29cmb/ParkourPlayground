@@ -19,8 +19,14 @@ class WorldController : IController {
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
 
-        @field:Configurable("game.template_world_path")
-        var templatePath: String = "templates/worlds/game"
+        @field:Configurable("templates.root_path")
+        var templateRootPath: String = "templates"
+
+        @field:Configurable("templates.worlds_path")
+        var templatesWorldsPath: String = "worlds"
+
+        @field:Configurable("templates.game_template_world")
+        var gameTemplateWorld: String = "game"
     }
 
     var lobbyBukkitWorld: World? = null
@@ -66,15 +72,16 @@ class WorldController : IController {
     }
 
     fun setupGameWorld(): World {
-        if (!Files.exists(Path.of(templatePath))) {
+        val gamePath = Path.of(templateRootPath, templatesWorldsPath, gameTemplateWorld)
+        if (!Files.exists(gamePath)) {
             throw WorldSetupException("Template path does not exist")
         }
 
-        return createTemporaryWorldFromTemplate(File(templatePath))
+        return createTemporaryWorldFromTemplate(File(gamePath.toString()))
     }
 
     // yes this is """inspired""" by mcc island
-    private fun createTemporaryWorldFromTemplate(templateDir: File): World {
+    fun createTemporaryWorldFromTemplate(templateDir: File): World {
         val worldName = "temp_world_${UUID.randomUUID().toString().replace("-", "_")}"
 
         FileUtils.copyDirectory(
@@ -84,4 +91,23 @@ class WorldController : IController {
 
         return Bukkit.createWorld(WorldCreator(worldName))!!
     }
+
+    fun getTemplateWorlds(): ArrayList<File> {
+        val worlds: ArrayList<File> = ArrayList()
+
+        val worldsFolder = Path.of(templateRootPath, templatesWorldsPath)
+        if(!Files.exists(worldsFolder)) {
+            throw WorldSetupException("Templates world path doesn't exist")
+        }
+
+        File(worldsFolder.toString()).listFiles().forEach { file ->
+            if(file.isDirectory) {
+                worlds.add(file)
+            }
+        }
+
+        return worlds
+    }
+
+    class TemplateWorld(val folder: File) {}
 }

@@ -4,4 +4,7 @@ lobby:
 game:
   intermission_length: 30
   gameplay_world: "game"
-  template_world_path: "templates/worlds/game"
+templates:
+  root_path: "templates"
+  worlds_path: "worlds"
+  game_template_world: "game"
