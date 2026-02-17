@@ -7,4 +7,5 @@ game:
 templates:
   root_path: "templates"
   worlds_path: "worlds"
+  obstacles_path: "obstacles"
   game_template_world: "game"
