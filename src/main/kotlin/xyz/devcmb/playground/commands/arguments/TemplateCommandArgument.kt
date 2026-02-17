@@ -20,7 +20,7 @@ class TemplateCommandArgument : ArgumentResolver<CommandSender, WorldController.
         val worldController = ControllerDelegate.getController("worldController") as WorldController
         val templateWorlds = worldController.getTemplateWorlds()
 
-        if(!templateWorlds.map({file -> file.name}).contains(argument)) {
+        if(!templateWorlds.map({ file -> file.name }).contains(argument)) {
             return ParseResult.failure("World template not found.")
         }
 
@@ -28,9 +28,9 @@ class TemplateCommandArgument : ArgumentResolver<CommandSender, WorldController.
     }
 
     override fun suggest(
-        invocation: Invocation<CommandSender?>?,
-        argument: Argument<WorldController.TemplateWorld?>?,
-        context: SuggestionContext?
+        invocation: Invocation<CommandSender>,
+        argument: Argument<WorldController.TemplateWorld>,
+        context: SuggestionContext
     ): SuggestionResult? {
         val worldController = ControllerDelegate.getController("worldController") as WorldController
         return worldController

@@ -7,10 +7,8 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.commands.admin.*
-import xyz.devcmb.playground.commands.arguments.ObstacleTypeArgument
-import xyz.devcmb.playground.commands.arguments.TemplateCommandArgument
-import xyz.devcmb.playground.commands.dev.ObstacleCommand
-import xyz.devcmb.playground.commands.dev.WorldCommand
+import xyz.devcmb.playground.commands.arguments.*
+import xyz.devcmb.playground.commands.dev.*
 
 @Controller("commandController", Controller.Priority.LOWEST)
 class CommandController : IController {
@@ -26,6 +24,7 @@ class CommandController : IController {
             )
             .argument(WorldController.TemplateWorld::class.java, TemplateCommandArgument())
             .argument(ObstacleController.ObstacleType::class.java, ObstacleTypeArgument())
+            .argument(ObstacleController.LoadableObstacle::class.java, LoadableObstacleArgument())
             .build()
     }
 }

@@ -1,7 +1,13 @@
 package xyz.devcmb.playground.controllers
 
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.session.ClipboardHolder
+import org.bukkit.Location
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 import java.io.File
@@ -38,6 +44,27 @@ class ObstacleController : IController {
             onError(e.message ?: "Unknown error")
         }
     }
+
+    fun loadObstacle(file: File, position: Location) {
+        val clipboard: Clipboard
+        BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC.getReader(file.inputStream()).use { reader ->
+            clipboard = reader.read()
+        }
+
+        val editSession = WorldEdit.getInstance()
+            .newEditSession(BukkitAdapter.adapt(position.world))
+
+        val operation = ClipboardHolder(clipboard)
+            .createPaste(editSession)
+            .to(BlockVector3.at(position.x, position.y, position.z))
+            .ignoreAirBlocks(false)
+            .build()
+
+        Operations.complete(operation)
+        editSession.close()
+    }
+
+    data class LoadableObstacle(val schematic: File)
 
     enum class ObstacleType {
         NORMAL,

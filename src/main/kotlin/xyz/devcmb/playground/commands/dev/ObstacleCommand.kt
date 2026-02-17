@@ -43,4 +43,15 @@ class ObstacleCommand {
             player.sendMessage(Component.text("An error occurred trying to save this obstacle: ${err}", NamedTextColor.RED))
         })
     }
+
+    @Execute(name = "load")
+    fun executeLoad(@Context player: Player, @Arg obstacle: ObstacleController.LoadableObstacle) {
+        val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
+        try {
+            obstacleController.loadObstacle(obstacle.schematic, player.location)
+            player.sendMessage(Component.text("Loaded obstacle successfully!", NamedTextColor.GREEN))
+        } catch(e: Exception) {
+            player.sendMessage(Component.text("An error occurred trying to load this obstacle: ${e.message ?: "Unknown error"}", NamedTextColor.RED))
+        }
+    }
 }
