@@ -7,7 +7,10 @@ import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.session.ClipboardHolder
+import com.sk89q.worldedit.world.block.BlockType
+import com.sk89q.worldedit.world.block.BlockTypes
 import org.bukkit.Location
+import org.bukkit.Material
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 import java.io.File
@@ -33,6 +36,16 @@ class ObstacleController : IController {
             saveDirectory.mkdirs()
         }
 
+        if(!checkForPositions(BlockTypes.DIAMOND_BLOCK!!, clipboard)) {
+            onError("A row of 5 diamond blocks indicating the start of the segment was not found in the schematic!")
+            return
+        }
+
+        if(!checkForPositions(BlockTypes.REDSTONE_BLOCK!!, clipboard)) {
+            onError("A row of 5 redstone blocks indicating the end of the segment was not found in the schematic!")
+            return
+        }
+
         try {
             FileOutputStream(File(saveDirectory, name)).use { outputStream ->
                 BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC
@@ -41,8 +54,35 @@ class ObstacleController : IController {
             }
             onSuccess()
         } catch(e: Exception) {
-            onError(e.message ?: "Unknown error")
+            onError("An error occurred while trying to save the schematic: ${e.message ?: " Unknown error"}")
         }
+    }
+
+    // This logic was human-made then made look pretty by chatgpt
+    private fun checkForPositions(type: BlockType, clipboard: Clipboard): Boolean {
+        for (origin in clipboard.region) {
+            if (clipboard.getBlock(origin).blockType != type) continue
+
+            fun check(dx: Int, dz: Int): Boolean {
+                for (i in -2..2) {
+                    val pos = BlockVector3.at(
+                        origin.x() + dx * i,
+                        origin.y(),
+                        origin.z() + dz * i
+                    )
+
+                    if (!clipboard.region.contains(pos)) return false
+                    if (clipboard.getBlock(pos).blockType != type) return false
+                }
+                return true
+            }
+
+            if (check(1, 0) || check(0, 1)) {
+                return true
+            }
+        }
+
+        return false
     }
 
     fun loadObstacle(file: File, position: Location) {

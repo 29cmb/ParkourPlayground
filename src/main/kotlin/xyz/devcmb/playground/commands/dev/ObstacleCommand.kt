@@ -40,7 +40,7 @@ class ObstacleCommand {
         obstacleController.saveObstacle(clipboard, name, obstacleType, {
             player.sendMessage(Component.text("Saved obstacle successfully!", NamedTextColor.GREEN))
         }, { err ->
-            player.sendMessage(Component.text("An error occurred trying to save this obstacle: ${err}", NamedTextColor.RED))
+            player.sendMessage(Component.text(err, NamedTextColor.RED))
         })
     }
 
