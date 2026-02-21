@@ -1,5 +1,6 @@
 package xyz.devcmb.playground.commands.admin
 
+import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
@@ -42,5 +43,18 @@ class LoopCommand {
 
         loopController.reset()
         executor.sendMessage(Component.text("Sent signal for loop reset!", NamedTextColor.GREEN))
+    }
+
+    @Execute(name = "countdown set")
+    fun countdownSet(@Context executor: CommandSender, @Arg value: Int) {
+        val loopController: LoopController = ControllerDelegate.getController("loopController") as LoopController
+        loopController.countdown = value
+        executor.sendMessage(Component.text("Set countdown to $value", NamedTextColor.GREEN))
+    }
+
+    @Execute(name = "countdown get")
+    fun countdownGet(@Context executor: CommandSender) {
+        val loopController: LoopController = ControllerDelegate.getController("loopController") as LoopController
+        executor.sendMessage(Component.text("Current countdown is ${loopController.countdown}", NamedTextColor.YELLOW))
     }
 }

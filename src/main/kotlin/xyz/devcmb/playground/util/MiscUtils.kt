@@ -28,14 +28,15 @@ object MiscUtils {
         object : BukkitRunnable() {
             override fun run() {
                 timeLeft -= 1
-                if(timeLeft <= 0) {
-                    this.cancel()
-                    onFinish()
-                    return
-                }
 
-                players.forEach {
-                    val title = Title.title(
+                val title = when(timeLeft) {
+                    0 -> Title.title(
+                        Component.text("Go!", NamedTextColor.AQUA)
+                            .decorate(TextDecoration.BOLD),
+                        Component.text(""),
+                        Title.Times.times(Ticks.duration(0), Ticks.duration(35), Ticks.duration(10))
+                    )
+                    else -> Title.title(
                         Component.text(">${" ".repeat(min(4, timeLeft))}")
                             .append(Component.text(timeLeft.toString()))
                             .append(Component.text("${" ".repeat(min(4, timeLeft))}<"))
@@ -49,8 +50,16 @@ object MiscUtils {
                         Component.text("The game is about to begin!"),
                         Title.Times.times(Ticks.duration(0), Ticks.duration(25), Ticks.duration(0))
                     )
+                }
 
+                players.forEach {
                     it.showTitle(title)
+                }
+
+                if(timeLeft <= 0) {
+                    this.cancel()
+                    onFinish()
+                    return
                 }
             }
         }.runTaskTimer(ParkourPlayground.plugin, 0, 20L)
