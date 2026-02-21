@@ -6,6 +6,7 @@ game:
   starting_position: [-0.5,67.0,-0.5]
   gate_start: [2,68,7]
   gate_end: [-4,66,7]
+  starting_obstacle_pivot: [-1,65,8]
 templates:
   root_path: "templates"
   worlds_path: "worlds"

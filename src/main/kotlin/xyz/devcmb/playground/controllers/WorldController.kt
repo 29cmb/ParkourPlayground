@@ -1,14 +1,20 @@
 package xyz.devcmb.playground.controllers
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
+import org.bukkit.entity.Player
+import org.bukkit.generator.ChunkGenerator
 import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
+import xyz.devcmb.playground.util.MiscUtils
 import java.io.File
 import java.io.PrintWriter
 import java.nio.charset.StandardCharsets
@@ -46,7 +52,9 @@ class WorldController : IController {
                 return
             }
 
-            lobbyBukkitWorld = Bukkit.createWorld(WorldCreator(lobbyWorld))
+            val creator = WorldCreator(lobbyWorld)
+                .generator(MiscUtils.VoidGenerator)
+            lobbyBukkitWorld = Bukkit.createWorld(creator)
         }
     }
 
@@ -84,11 +92,11 @@ class WorldController : IController {
             throw WorldSetupException("Template path does not exist")
         }
 
-        return createTemporaryWorldFromTemplate(File(gamePath.toString()))
+        return createTemporaryWorldFromTemplate(File(gamePath.toString()), true)
     }
 
     // yes this is """inspired""" by mcc island
-    fun createTemporaryWorldFromTemplate(templateDir: File): World {
+    fun createTemporaryWorldFromTemplate(templateDir: File, void: Boolean): World {
         val worldName = "temp_world_${UUID.randomUUID().toString().replace("-", "_")}"
         val destination = File(Bukkit.getWorldContainer(), worldName)
 
@@ -108,7 +116,12 @@ class WorldController : IController {
             idFile.delete()
         }
 
-        return Bukkit.createWorld(WorldCreator(worldName))!!
+        val creator = WorldCreator(worldName)
+        if(void) {
+            creator.generator(MiscUtils.VoidGenerator)
+        }
+
+        return Bukkit.createWorld(creator)!!
     }
 
     fun saveWorldToTemplate(world: World) = saveWorldToTemplate(world, null)
@@ -178,6 +191,16 @@ class WorldController : IController {
         }
 
         return worlds
+    }
+
+    fun createVoidWorld(name: Optional<String>): World {
+        val worldCreator = WorldCreator(name.orElse("temp_world_${UUID.randomUUID().toString().replace("-", "_")}"))
+        worldCreator.generator(MiscUtils.VoidGenerator)
+
+        val world = Bukkit.createWorld(worldCreator)!!
+        world.getBlockAt(0, 64, 0).setType(Material.STONE);
+
+        return world
     }
 
     data class TemplateWorld(val folder: File)

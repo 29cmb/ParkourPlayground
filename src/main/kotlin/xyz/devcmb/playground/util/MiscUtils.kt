@@ -7,6 +7,7 @@ import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.generator.ChunkGenerator
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.ParkourPlayground
 import java.util.TimerTask
@@ -63,5 +64,31 @@ object MiscUtils {
                 }
             }
         }.runTaskTimer(ParkourPlayground.plugin, 0, 20L)
+    }
+
+    object VoidGenerator : ChunkGenerator() {
+        public override fun shouldGenerateNoise(): Boolean {
+            return false
+        }
+
+        public override fun shouldGenerateSurface(): Boolean {
+            return false
+        }
+
+        public override fun shouldGenerateCaves(): Boolean {
+            return false
+        }
+
+        public override fun shouldGenerateDecorations(): Boolean {
+            return false
+        }
+
+        public override fun shouldGenerateMobs(): Boolean {
+            return false
+        }
+
+        public override fun shouldGenerateStructures(): Boolean {
+            return false
+        }
     }
 }
