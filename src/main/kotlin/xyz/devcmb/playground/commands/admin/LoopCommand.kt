@@ -1,29 +1,38 @@
 package xyz.devcmb.playground.commands.admin
 
 import dev.rollczi.litecommands.annotations.command.Command
+import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.flag.Flag
-import org.bukkit.Bukkit
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.command.CommandSender
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.ControllerDelegate
-import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.controllers.LoopController
 
 @Command(name = "loop")
 class LoopCommand {
-    var unpauseRunnable: BukkitRunnable? = null
-
     @Execute(name = "pause")
-    fun pause() {
+    fun pause(@Context executor: CommandSender) {
         val loopController: LoopController = ControllerDelegate.getController("loopController") as LoopController
+        if(loopController.currentState == LoopController.GameState.PAUSED) {
+            executor.sendMessage(Component.text("Nothing to change, the loop is already paused.", NamedTextColor.YELLOW))
+            return
+        }
+
         loopController.pauseLoop()
+        executor.sendMessage(Component.text("Sent signal for loop pause!", NamedTextColor.GREEN))
     }
 
     @Execute(name = "unpause")
-    fun unpause() {
+    fun unpause(@Context executor: CommandSender) {
         val loopController: LoopController = ControllerDelegate.getController("loopController") as LoopController
-        loopController.unpauseLoop()
+        if(loopController.currentState != LoopController.GameState.PAUSED) {
+            executor.sendMessage(Component.text("Nothing to change, the loop is already unpaused.", NamedTextColor.YELLOW))
+            return
+        }
 
-        unpauseRunnable?.cancel()
+        loopController.unpauseLoop()
+        executor.sendMessage(Component.text("Sent signal for loop unpause!", NamedTextColor.GREEN))
     }
 }
