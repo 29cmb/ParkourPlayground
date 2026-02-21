@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
@@ -14,10 +15,14 @@ import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
+import xyz.devcmb.playground.listeners.PlayerListeners
+import xyz.devcmb.playground.util.MiscUtils
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.math.max
+import kotlin.math.min
 
 @Controller("loopController", Controller.Priority.HIGH)
 class LoopController : IController {
@@ -41,14 +46,22 @@ class LoopController : IController {
 
         @field:Configurable("game.starting_position")
         var startPosition: List<Double> = listOf(-0.5, 67.0, -0.5)
+
+        @field:Configurable("game.gate_start")
+        var gateStartPosition: List<Int> = listOf(2,68,7)
+
+        @field:Configurable("game.gate_end")
+        var gateEndPosition: List<Int> = listOf(-4,66,7)
+
+        @Configurable("lobby.position")
+        var lobbySpawn: List<Double> = listOf(0.5,67.0,0.5)
+
+        @Configurable("lobby.world")
+        var lobbyWorld: String = "hub"
     }
 
     override fun init() {
         setup()
-    }
-
-    override fun cleanup() {
-
     }
 
     fun setup() {
@@ -137,10 +150,57 @@ class LoopController : IController {
             player.teleport(Location(world, startPosition.get(0), startPosition.get(1), startPosition.get(2)))
             player.gameMode = GameMode.ADVENTURE
         }
+
+        MiscUtils.delay(3, {
+            MiscUtils.countdown(playerStates.keys, 10, this::gameOn)
+        })
     }
 
     fun gameOn() {
+        var startX = gateStartPosition.get(0)
+        var startY = gateStartPosition.get(1)
+        var startZ = gateStartPosition.get(2)
+        var endX = gateEndPosition.get(0)
+        var endY = gateEndPosition.get(1)
+        var endZ = gateEndPosition.get(2)
+
+        for(x in min(startX, endX)..max(startX, endX))
+        for(y in min(startY, endY)..max(startY, endY))
+        for(z in min(startZ, endZ)..max(startZ, endZ)) {
+            world!!.getBlockAt(x, y, z).type = Material.AIR
+        }
+
         currentState = GameState.GAME_ON
+    }
+
+    fun reset() {
+        Bukkit.getOnlinePlayers().forEach { player ->
+            player.teleport(Location(
+                Bukkit.getWorld(lobbyWorld),
+                lobbySpawn.get(0),
+                lobbySpawn.get(1),
+                lobbySpawn.get(2)
+            ))
+        }
+
+        if(playerWaitingRunnable != null) {
+            playerWaitingRunnable!!.cancel()
+            playerWaitingRunnable = null
+        }
+
+        if(countdownRunnable != null) {
+            countdownRunnable!!.cancel()
+            countdownRunnable = null
+        }
+
+        if(world != null) {
+            Bukkit.unloadWorld(world!!, false)
+            world = null
+        }
+
+        prePauseState = null
+        currentState = GameState.PRELOAD
+        setup()
     }
 
     enum class GameState {

@@ -18,9 +18,18 @@ import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.playground.ParkourPlayground
+import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.util.Format
 
 class PlayerListeners : Listener {
+    companion object {
+        @Configurable("lobby.position")
+        var lobbySpawn: List<Double> = listOf(0.5,67.0,0.5)
+
+        @Configurable("lobby.world")
+        var lobbyWorld: String = "hub"
+    }
+
     @EventHandler
     fun onPlayerJoinEvent(event: PlayerJoinEvent) {
         val player = event.player
@@ -35,33 +44,27 @@ class PlayerListeners : Listener {
         player.foodLevel = 20
         player.saturation = 0f
 
-        val config = ParkourPlayground.plugin.config
-        val position = config.getList("lobby.position")!!
-
         player.teleport(Location(
-            Bukkit.getWorld(config.getString("lobby.world")!!),
-            position.get(0) as Double,
-            position.get(1) as Double,
-            position.get(2) as Double
+            Bukkit.getWorld(lobbyWorld),
+            lobbySpawn.get(0),
+            lobbySpawn.get(1),
+            lobbySpawn.get(2)
         ))
     }
 
 
     @EventHandler
     fun onPlayerRespawnEvent(event: PlayerRespawnEvent) {
-        val config = ParkourPlayground.plugin.config
-        val position = config.getList("lobby.position")!!
-
         val player = event.player
         player.foodLevel = 20
         player.saturation = 0f
 
-        event.respawnLocation = Location(
-            Bukkit.getWorld(config.getString("lobby.world")!!),
-            position.get(0) as Double,
-            position.get(1) as Double,
-            position.get(2) as Double
-        )
+        player.teleport(Location(
+            Bukkit.getWorld(lobbyWorld),
+            lobbySpawn.get(0),
+            lobbySpawn.get(1),
+            lobbySpawn.get(2)
+        ))
     }
 
     @EventHandler

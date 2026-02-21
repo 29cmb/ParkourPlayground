@@ -1,9 +1,11 @@
 lobby:
   world: "hub"
-  position: [0.0,67.0,0.0]
+  position: [0.5,67.0,0.5]
 game:
   intermission_length: 30
   starting_position: [-0.5,67.0,-0.5]
+  gate_start: [2,68,7]
+  gate_end: [-4,66,7]
 templates:
   root_path: "templates"
   worlds_path: "worlds"

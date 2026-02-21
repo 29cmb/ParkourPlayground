@@ -35,4 +35,12 @@ class LoopCommand {
         loopController.unpauseLoop()
         executor.sendMessage(Component.text("Sent signal for loop unpause!", NamedTextColor.GREEN))
     }
+
+    @Execute(name = "reset")
+    fun reset(@Context executor: CommandSender) {
+        val loopController: LoopController = ControllerDelegate.getController("loopController") as LoopController
+
+        loopController.reset()
+        executor.sendMessage(Component.text("Sent signal for loop reset!", NamedTextColor.GREEN))
+    }
 }
