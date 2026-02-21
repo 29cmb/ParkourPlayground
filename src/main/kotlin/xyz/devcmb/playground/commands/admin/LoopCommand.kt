@@ -10,6 +10,8 @@ import org.bukkit.command.CommandSender
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.controllers.LoopController
+import java.util.Optional
+import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "loop")
 class LoopCommand {
@@ -45,16 +47,17 @@ class LoopCommand {
         executor.sendMessage(Component.text("Sent signal for loop reset!", NamedTextColor.GREEN))
     }
 
-    @Execute(name = "countdown set")
-    fun countdownSet(@Context executor: CommandSender, @Arg value: Int) {
+    @Execute(name = "countdown")
+    fun countdown(@Context executor: CommandSender, @Arg value: Optional<Int>) {
+        val value = value.getOrNull()
         val loopController: LoopController = ControllerDelegate.getController("loopController") as LoopController
+
+        if(value == null) {
+            executor.sendMessage(Component.text("Current countdown is ${loopController.countdown}", NamedTextColor.YELLOW))
+            return
+        }
+
         loopController.countdown = value
         executor.sendMessage(Component.text("Set countdown to $value", NamedTextColor.GREEN))
-    }
-
-    @Execute(name = "countdown get")
-    fun countdownGet(@Context executor: CommandSender) {
-        val loopController: LoopController = ControllerDelegate.getController("loopController") as LoopController
-        executor.sendMessage(Component.text("Current countdown is ${loopController.countdown}", NamedTextColor.YELLOW))
     }
 }

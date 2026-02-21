@@ -23,7 +23,7 @@ object MiscUtils {
         return runnable
     }
 
-    fun countdown(players: Set<Player>, seconds: Int, onFinish: () -> Unit) {
+    fun countdown(players: Set<Player>, seconds: Int, onFinish: () -> Unit, tick: (time: Int) -> Unit = {}) {
         var timeLeft = seconds
 
         object : BukkitRunnable() {
@@ -56,6 +56,8 @@ object MiscUtils {
                 players.forEach {
                     it.showTitle(title)
                 }
+
+                tick(timeLeft)
 
                 if(timeLeft <= 0) {
                     this.cancel()

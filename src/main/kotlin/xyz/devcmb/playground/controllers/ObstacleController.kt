@@ -9,7 +9,22 @@ import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.Particle
+import org.bukkit.Sound
+import org.bukkit.SoundCategory
 import org.bukkit.World
+import org.bukkit.block.data.BlockData
+import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.EntityType
+import org.bukkit.entity.Player
+import org.bukkit.entity.boat.OakBoat
+import org.bukkit.event.EventHandler
+import org.bukkit.event.entity.EntityDismountEvent
+import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.ParkourPlayground
@@ -17,11 +32,15 @@ import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 import java.io.File
 import java.io.FileOutputStream
+import java.util.UUID
 import kotlin.io.path.Path
 
 @Controller("obstacleController", Controller.Priority.HIGH)
 class ObstacleController : IController {
     val loadedObstacles: ArrayList<LoadedObstacle> = ArrayList()
+    val playerObstacles: HashMap<Player, UUID> = HashMap()
+    val playerSpawns: HashMap<Player, Location> = HashMap()
+    val playersWhoShouldBeInBoats: HashSet<Player> = HashSet()
 
     companion object {
         @field:Configurable("templates.root_path")
@@ -32,12 +51,30 @@ class ObstacleController : IController {
 
         @field:Configurable("game.starting_obstacle_pivot")
         var startingObstaclePivot: List<Int> = listOf(-1,65,8)
+
+        @field:Configurable("game.starting_position")
+        var startPosition: List<Double> = listOf(-0.5, 67.0, -0.5)
     }
 
     override fun init() {
     }
 
-    fun stepObstacleLoad(type: ObstacleType?) {
+    fun pregame(loopController: LoopController) {
+        playerSpawns.clear()
+        playerObstacles.clear()
+        loadedObstacles.clear()
+
+        Bukkit.getOnlinePlayers().forEach {
+            playerSpawns.put(it, Location(
+                loopController.world,
+                startPosition[0],
+                startPosition[1],
+                startPosition[2]
+            ))
+        }
+    }
+
+    fun stepObstacleLoad(type: ObstacleType? = null) {
         val loopController = ControllerDelegate.getController("loopController") as LoopController
         if(loopController.world == null) {
             throw ObstacleStepException("Cannot step load cycle while game is not on")
@@ -77,8 +114,23 @@ class ObstacleController : IController {
             endPivot.z() - pivot.z()
         )
 
+        val region = clipboard.region
+
+        val offset = loadPosition.subtract(clipboard.origin)
+
+        val min = region.minimumPoint.add(offset)
+        val max = region.maximumPoint.add(offset)
+
         loadedObstacles.add(
-            LoadedObstacle(obstacle, type, loadPosition, worldEndPos)
+            LoadedObstacle(
+                UUID.randomUUID(),
+                obstacle,
+                type,
+                loadPosition,
+                worldEndPos,
+                min,
+                max
+            )
         )
     }
 
@@ -179,11 +231,119 @@ class ObstacleController : IController {
         Operations.complete(operation)
         editSession.close()
 
+        val origin = clipboard.origin
+        for (pos in clipboard.region) {
+            val block = clipboard.getBlock(pos)
+
+            if (block.blockType == BlockTypes.AIR) continue
+
+            val worldX = position.x() + (pos.x() - origin.x())
+            val worldY = position.y() + (pos.y() - origin.y())
+            val worldZ = position.z() + (pos.z() - origin.z())
+
+            val pos = Location(world, worldX + 0.5, worldY + 0.5, worldZ + 0.5)
+            val blockData = world.getBlockData(worldX, worldY, worldZ)
+            world.spawnParticle(
+                Particle.BLOCK,
+                pos,
+                20,
+                0.0,
+                0.0,
+                0.0,
+                blockData
+            )
+
+            world.playSound(pos, blockData.soundGroup.breakSound, SoundCategory.BLOCKS, 1f, 1f)
+        }
+
         return clipboard
     }
 
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        val player = event.player
+        val loc = player.location
+
+        val currentObstacle = loadedObstacles.find { obstacle ->
+            loc.blockX in obstacle.boundsMin.x()..obstacle.boundsMax.x() &&
+            loc.blockY in obstacle.boundsMin.y()..obstacle.boundsMax.y() &&
+            loc.blockZ in obstacle.boundsMin.z()..obstacle.boundsMax.z()
+        }
+
+        if (currentObstacle != null) {
+            val lastObstacle = playerObstacles.get(player)
+            if(lastObstacle != currentObstacle.id) {
+                playerSpawns.put(player, Location(
+                    player.world,
+                    currentObstacle.startPos.x().toDouble(),
+                    currentObstacle.startPos.y() + 2.0,
+                    currentObstacle.startPos.z().toDouble()
+                ))
+
+                player.inventory.clear()
+                if(currentObstacle.type != ObstacleType.BOAT) {
+                    playersWhoShouldBeInBoats.remove(player)
+                    if(player.vehicle != null && player.vehicle is OakBoat) {
+                        player.vehicle!!.remove()
+                    }
+                }
+
+                when(currentObstacle.type) {
+                    ObstacleType.ELYTRA -> {
+                        player.inventory.chestplate = ItemStack.of(Material.ELYTRA).apply {
+                            val meta = itemMeta
+                            meta.isUnbreakable = true
+                            itemMeta = meta
+                        }
+                    }
+                    ObstacleType.TRIDENT -> {
+                        player.inventory.setItemInMainHand(ItemStack.of(Material.TRIDENT).apply {
+                            val meta = itemMeta
+                            meta.isUnbreakable = true
+                            meta.addEnchant(Enchantment.RIPTIDE, 3, false)
+                            itemMeta = meta
+                        })
+                    }
+                    ObstacleType.NORMAL -> {}
+                    ObstacleType.WIND_CHARGE -> {
+                        player.inventory.setItemInMainHand(ItemStack.of(Material.WIND_CHARGE, 64))
+                    }
+                    ObstacleType.BOAT -> {
+                        if(!playersWhoShouldBeInBoats.contains(player)) {
+                            val boat = player.world.spawnEntity(player.location, EntityType.OAK_BOAT)
+                            boat.addPassenger(player)
+                            playersWhoShouldBeInBoats.add(player)
+                        }
+                    }
+                }
+            }
+
+            playerObstacles.put(player, currentObstacle.id)
+        }
+    }
+
+    @EventHandler
+    fun playerDismountEvent(event: EntityDismountEvent) {
+        val player = event.entity
+        if(player !is Player || !playersWhoShouldBeInBoats.contains(player)) return
+
+        val boat = event.dismounted
+        if(boat !is OakBoat) return
+
+        boat.remove()
+        player.teleport(playerSpawns.get(player)!!)
+    }
+
     data class LoadableObstacle(val schematic: File)
-    data class LoadedObstacle(val schematic: File, val type: ObstacleType, val startPos: BlockVector3, val endPos: BlockVector3)
+    data class LoadedObstacle(
+        val id: UUID,
+        val schematic: File,
+        val type: ObstacleType,
+        val startPos: BlockVector3,
+        val endPos: BlockVector3,
+        val boundsMin: BlockVector3,
+        val boundsMax: BlockVector3
+    )
 
     enum class ObstacleType {
         NORMAL,

@@ -44,6 +44,10 @@ class PlayerListeners : Listener {
         player.foodLevel = 20
         player.saturation = 0f
 
+        if(player.vehicle != null) {
+            player.vehicle!!.remove()
+        }
+
         player.teleport(Location(
             Bukkit.getWorld(lobbyWorld),
             lobbySpawn.get(0),

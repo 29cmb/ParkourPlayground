@@ -11,6 +11,7 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.Constants
 import xyz.devcmb.playground.ControllerDelegate
+import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
@@ -151,12 +152,24 @@ class LoopController : IController {
             player.gameMode = GameMode.ADVENTURE
         }
 
+        val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
+        obstacleController.pregame(this)
+
         MiscUtils.delay(3, {
-            MiscUtils.countdown(playerStates.keys, 10, this::gameOn)
+            MiscUtils.countdown(playerStates.keys, 10, this::gameOn, {
+                try {
+                    obstacleController.stepObstacleLoad()
+                } catch(e: ObstacleStepException) {
+                    currentState = GameState.ERROR
+                    ParkourPlayground.pluginLogger.severe("An error occurred when trying to step obstacle: ${e.message}")
+                }
+            })
         })
     }
 
     fun gameOn() {
+        if(currentState == GameState.ERROR) return;
+
         var startX = gateStartPosition.get(0)
         var startY = gateStartPosition.get(1)
         var startZ = gateStartPosition.get(2)
