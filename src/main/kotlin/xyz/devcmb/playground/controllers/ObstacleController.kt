@@ -4,6 +4,7 @@ import com.sk89q.worldedit.WorldEdit
 import com.sk89q.worldedit.bukkit.BukkitAdapter
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.session.ClipboardHolder
@@ -34,13 +35,14 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 import kotlin.io.path.Path
+import kotlin.math.max
+import kotlin.math.min
 
 @Controller("obstacleController", Controller.Priority.HIGH)
 class ObstacleController : IController {
     val loadedObstacles: ArrayList<LoadedObstacle> = ArrayList()
     val playerObstacles: HashMap<Player, UUID> = HashMap()
     val playerSpawns: HashMap<Player, Location> = HashMap()
-    val playersWhoShouldBeInBoats: HashSet<Player> = HashSet()
 
     companion object {
         @field:Configurable("templates.root_path")
@@ -54,6 +56,9 @@ class ObstacleController : IController {
 
         @field:Configurable("game.starting_position")
         var startPosition: List<Double> = listOf(-0.5, 67.0, -0.5)
+
+        @field:Configurable("game.min_y")
+        var minY: Int = 30
     }
 
     override fun init() {
@@ -116,10 +121,36 @@ class ObstacleController : IController {
 
         val region = clipboard.region
 
+        var minX = Int.MAX_VALUE
+        var minY = Int.MAX_VALUE
+        var minZ = Int.MAX_VALUE
+
+        var maxX = Int.MIN_VALUE
+        var maxY = Int.MIN_VALUE
+        var maxZ = Int.MIN_VALUE
+
+        var found = false
+
+        for (pos in region) {
+            val block = clipboard.getBlock(pos)
+
+            if (block.blockType == BlockTypes.AIR!!) continue
+
+            found = true
+
+            minX = min(minX, pos.x())
+            minY = min(minY, pos.y())
+            minZ = min(minZ, pos.z())
+
+            maxX = max(maxX, pos.x())
+            maxY = max(maxY, pos.y())
+            maxZ = max(maxZ, pos.z())
+        }
+
         val offset = loadPosition.subtract(clipboard.origin)
 
-        val min = region.minimumPoint.add(offset)
-        val max = region.maximumPoint.add(offset)
+        val min = BlockVector3.at(minX, minY, minZ).add(offset)
+        val max = BlockVector3.at(maxX, maxY, maxZ).add(offset)
 
         loadedObstacles.add(
             LoadedObstacle(
@@ -161,8 +192,8 @@ class ObstacleController : IController {
         }
 
         try {
-            FileOutputStream(File(saveDirectory, name)).use { outputStream ->
-                BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC
+            FileOutputStream(File(saveDirectory, "$name.schem")).use { outputStream ->
+                BuiltInClipboardFormat.FAST_V3
                     .getWriter(outputStream)
                     .use { writer -> writer.write(clipboard) }
             }
@@ -201,8 +232,11 @@ class ObstacleController : IController {
     }
 
     fun loadObstacleFromFile(file: File, position: BlockVector3, world: World, force: Boolean): Clipboard {
+        val format = ClipboardFormats.findByFile(file)
+            ?: throw IllegalArgumentException("Unknown schematic format")
+
         val clipboard: Clipboard
-        BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC.getReader(file.inputStream()).use { reader ->
+        format.getReader(file.inputStream()).use { reader ->
             clipboard = reader.read()
         }
 
@@ -219,8 +253,23 @@ class ObstacleController : IController {
             else throw IllegalStateException("Cannot load obstacle without an end pivot of 5 redstone blocks")
         }
 
+        val region = clipboard.region
+        val origin = clipboard.origin
+
+        val min = region.minimumPoint.subtract(origin).add(position)
+        val max = region.maximumPoint.subtract(origin).add(position)
+
+        for (x in (min.x() shr 4)..(max.x() shr 4)) {
+            for (z in (min.z() shr 4)..(max.z() shr 4)) {
+                world.getChunkAt(x, z).load(true)
+            }
+        }
+
         val editSession = WorldEdit.getInstance()
-            .newEditSession(BukkitAdapter.adapt(world))
+            .newEditSessionBuilder()
+            .world(BukkitAdapter.adapt(world))
+            .fastMode(true)
+            .build()
 
         val operation = ClipboardHolder(clipboard)
             .createPaste(editSession)
@@ -229,9 +278,9 @@ class ObstacleController : IController {
             .build()
 
         Operations.complete(operation)
+        editSession.flushQueue()
         editSession.close()
 
-        val origin = clipboard.origin
         for (pos in clipboard.region) {
             val block = clipboard.getBlock(pos)
 
@@ -260,9 +309,12 @@ class ObstacleController : IController {
     }
 
     @EventHandler
-    fun playerMoveEvent(event: PlayerMoveEvent) {
+    fun playerObstacleHandle(event: PlayerMoveEvent) {
         val player = event.player
         val loc = player.location
+
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
+        if(player.world != loopController.world) return
 
         val currentObstacle = loadedObstacles.find { obstacle ->
             loc.blockX in obstacle.boundsMin.x()..obstacle.boundsMax.x() &&
@@ -281,12 +333,6 @@ class ObstacleController : IController {
                 ))
 
                 player.inventory.clear()
-                if(currentObstacle.type != ObstacleType.BOAT) {
-                    playersWhoShouldBeInBoats.remove(player)
-                    if(player.vehicle != null && player.vehicle is OakBoat) {
-                        player.vehicle!!.remove()
-                    }
-                }
 
                 when(currentObstacle.type) {
                     ObstacleType.ELYTRA -> {
@@ -300,20 +346,13 @@ class ObstacleController : IController {
                         player.inventory.setItemInMainHand(ItemStack.of(Material.TRIDENT).apply {
                             val meta = itemMeta
                             meta.isUnbreakable = true
-                            meta.addEnchant(Enchantment.RIPTIDE, 3, false)
+                            meta.addEnchant(Enchantment.RIPTIDE, 1, false)
                             itemMeta = meta
                         })
                     }
                     ObstacleType.NORMAL -> {}
                     ObstacleType.WIND_CHARGE -> {
                         player.inventory.setItemInMainHand(ItemStack.of(Material.WIND_CHARGE, 64))
-                    }
-                    ObstacleType.BOAT -> {
-                        if(!playersWhoShouldBeInBoats.contains(player)) {
-                            val boat = player.world.spawnEntity(player.location, EntityType.OAK_BOAT)
-                            boat.addPassenger(player)
-                            playersWhoShouldBeInBoats.add(player)
-                        }
                     }
                 }
             }
@@ -323,15 +362,16 @@ class ObstacleController : IController {
     }
 
     @EventHandler
-    fun playerDismountEvent(event: EntityDismountEvent) {
-        val player = event.entity
-        if(player !is Player || !playersWhoShouldBeInBoats.contains(player)) return
+    fun playerFallEvent(event: PlayerMoveEvent) {
+        val player = event.player
+        val loc = player.location
 
-        val boat = event.dismounted
-        if(boat !is OakBoat) return
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
+        if(player.world != loopController.world) return
 
-        boat.remove()
-        player.teleport(playerSpawns.get(player)!!)
+        if(loc.y < minY) {
+            player.teleport(playerSpawns.get(player)!!)
+        }
     }
 
     data class LoadableObstacle(val schematic: File)
@@ -350,6 +390,5 @@ class ObstacleController : IController {
         TRIDENT,
         ELYTRA,
         WIND_CHARGE,
-        BOAT
     }
 }

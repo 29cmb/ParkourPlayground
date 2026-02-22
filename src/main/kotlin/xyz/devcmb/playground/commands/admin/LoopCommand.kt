@@ -4,6 +4,7 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
@@ -14,6 +15,7 @@ import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "loop")
+@Permission("playground.admin")
 class LoopCommand {
     @Execute(name = "pause")
     fun pause(@Context executor: CommandSender) {

@@ -5,6 +5,7 @@ import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.flag.Flag
+import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -20,6 +21,7 @@ import xyz.devcmb.playground.controllers.WorldController
 import java.util.*
 
 @Command(name = "world")
+@Permission("playground.dev")
 class WorldCommand {
     @Execute(name = "template load")
     fun executeWorld(@Context sender: CommandSender, @Arg world: WorldController.TemplateWorld, @Flag("-t", "--teleport") teleport: Boolean) {

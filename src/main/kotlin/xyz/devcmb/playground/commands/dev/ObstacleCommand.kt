@@ -9,6 +9,7 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
@@ -20,6 +21,7 @@ import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "obstacle")
+@Permission("playground.dev")
 class ObstacleCommand {
     @Execute(name = "save")
     fun executeSave(@Context player: Player, @Arg name: String, @Arg obstacleType: ObstacleController.ObstacleType) {
@@ -29,8 +31,9 @@ class ObstacleCommand {
         val playerSession = sessionManager.get(BukkitAdapter.adapt(player))
         var clipboard: Clipboard
         try {
-            clipboard = playerSession.clipboard.clipboard
-        } catch(e: EmptyClipboardException) {
+            clipboard = playerSession.clipboard.clipboards.lastOrNull()
+                ?: throw IllegalStateException("No clipboard loaded for this session")
+        } catch(e: Exception) {
             player.sendMessage(Component.text("Your worldedit clipboard is empty!", NamedTextColor.YELLOW))
             return
         }

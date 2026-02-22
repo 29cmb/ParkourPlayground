@@ -7,3 +7,10 @@ authors: [ DevCmb ]
 description: An open-source parkour server plugin
 website: devcmb.xyz
 depend: [ WorldEdit ]
+permissions:
+  playground.dev:
+    default: op
+    description: Developer commands for parkour playground
+  playground.admin:
+    default: op
+    description: Administrative commands for parkour playground
