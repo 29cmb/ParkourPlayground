@@ -14,6 +14,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
+import org.bukkit.Axis
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -117,65 +118,65 @@ class ObstacleController : IController {
 
         var clipboard: Clipboard
         try {
-            clipboard = loadObstacleFromFile(obstacle, loadPosition, loopController.world!!, false)
+            loadObstacleFromFile(obstacle, loadPosition, loopController.world!!, false, { clipboard, pos ->
+                val endPivot = getPivotLine(clipboard, BlockTypes.REDSTONE_BLOCK!!)!!
+                val pivot = clipboard.origin
+
+                val worldEndPos = loadPosition.add(
+                    endPivot.x() - pivot.x(),
+                    endPivot.y() - pivot.y(),
+                    endPivot.z() - pivot.z()
+                )
+
+                val region = clipboard.region
+
+                var minX = Int.MAX_VALUE
+                var minY = Int.MAX_VALUE
+                var minZ = Int.MAX_VALUE
+
+                var maxX = Int.MIN_VALUE
+                var maxY = Int.MIN_VALUE
+                var maxZ = Int.MIN_VALUE
+
+                var found = false
+
+                for (pos in region) {
+                    val block = clipboard.getBlock(pos)
+
+                    if (block.blockType == BlockTypes.AIR!!) continue
+
+                    found = true
+
+                    minX = min(minX, pos.x())
+                    minY = min(minY, pos.y())
+                    minZ = min(minZ, pos.z())
+
+                    maxX = max(maxX, pos.x())
+                    maxY = max(maxY, pos.y())
+                    maxZ = max(maxZ, pos.z())
+                }
+
+                val offset = loadPosition.subtract(clipboard.origin)
+
+                val min = BlockVector3.at(minX, minY, minZ).add(offset)
+                val max = BlockVector3.at(maxX, maxY, maxZ).add(offset)
+
+                loadedObstacles.add(
+                    LoadedObstacle(
+                        UUID.randomUUID(),
+                        obstacle,
+                        type,
+                        pos,
+                        worldEndPos,
+                        min,
+                        max
+                    )
+                )
+            })
         } catch(e: IllegalStateException) {
             throw ObstacleStepException("Failed to load obstacle ${obstacle.path.toString()}: ${e.message}")
             return
         }
-
-        val endPivot = getPivotLine(clipboard, BlockTypes.REDSTONE_BLOCK!!)!!
-        val pivot = clipboard.origin
-
-        val worldEndPos = loadPosition.add(
-            endPivot.x() - pivot.x(),
-            endPivot.y() - pivot.y(),
-            endPivot.z() - pivot.z()
-        )
-
-        val region = clipboard.region
-
-        var minX = Int.MAX_VALUE
-        var minY = Int.MAX_VALUE
-        var minZ = Int.MAX_VALUE
-
-        var maxX = Int.MIN_VALUE
-        var maxY = Int.MIN_VALUE
-        var maxZ = Int.MIN_VALUE
-
-        var found = false
-
-        for (pos in region) {
-            val block = clipboard.getBlock(pos)
-
-            if (block.blockType == BlockTypes.AIR!!) continue
-
-            found = true
-
-            minX = min(minX, pos.x())
-            minY = min(minY, pos.y())
-            minZ = min(minZ, pos.z())
-
-            maxX = max(maxX, pos.x())
-            maxY = max(maxY, pos.y())
-            maxZ = max(maxZ, pos.z())
-        }
-
-        val offset = loadPosition.subtract(clipboard.origin)
-
-        val min = BlockVector3.at(minX, minY, minZ).add(offset)
-        val max = BlockVector3.at(maxX, maxY, maxZ).add(offset)
-
-        loadedObstacles.add(
-            LoadedObstacle(
-                UUID.randomUUID(),
-                obstacle,
-                type,
-                loadPosition,
-                worldEndPos,
-                min,
-                max
-            )
-        )
     }
 
     fun getRandomObstacle(type: ObstacleType): File {
@@ -245,7 +246,39 @@ class ObstacleController : IController {
         return null
     }
 
-    fun loadObstacleFromFile(file: File, position: BlockVector3, world: World, force: Boolean): Clipboard {
+    // is the reuse redundant
+    // uh
+    private fun getPivotAxis(clipboard: Clipboard, type: BlockType): Axis? {
+        for (origin in clipboard.region) {
+            if (clipboard.getBlock(origin).blockType != type) continue
+
+            fun check(dx: Int, dz: Int): Boolean {
+                for (i in -2..2) {
+                    val pos = BlockVector3.at(
+                        origin.x() + dx * i,
+                        origin.y(),
+                        origin.z() + dz * i
+                    )
+
+                    if (!clipboard.region.contains(pos)) return false
+                    if (clipboard.getBlock(pos).blockType != type) return false
+                }
+                return true
+            }
+
+            if(check(1,0)) {
+                return Axis.X
+            }
+
+            if(check(0,1)) {
+                return Axis.Z
+            }
+        }
+
+        return null
+    }
+
+    fun loadObstacleFromFile(file: File, position: BlockVector3, world: World, force: Boolean, onComplete: (clipboard: Clipboard, pos: BlockVector3) -> Unit = {clipboard,pos ->}) {
         val format = ClipboardFormats.findByFile(file)
             ?: throw IllegalArgumentException("Unknown schematic format")
 
@@ -254,11 +287,25 @@ class ObstacleController : IController {
             clipboard = reader.read()
         }
 
-        val pivot = getPivotLine(clipboard, BlockTypes.DIAMOND_BLOCK!!)
+        val region = clipboard.region
+        val origin = clipboard.origin
+
+        var pivot = getPivotLine(clipboard, BlockTypes.DIAMOND_BLOCK!!)
+        var position = position
         if(pivot == null) {
             if(force) DebugUtil.warning("Loading obstacle from path ${file.path.toString()} without a valid start")
             else throw IllegalStateException("Cannot load obstacle without a start pivot of 5 diamond blocks")
         } else {
+            val axis = getPivotAxis(clipboard, BlockTypes.DIAMOND_BLOCK!!)
+            DebugUtil.info("Found that the diamond line is along the ${axis} axis")
+
+            // Its inverted because if the line is on the X axis, forward and backward is the Z axis
+            position = position.add(
+                if (axis == Axis.Z) 1 else 0,
+                0,
+                if(axis == Axis.X) 1 else 0
+            )
+
             clipboard.origin = pivot
         }
 
@@ -266,9 +313,6 @@ class ObstacleController : IController {
             if(force) DebugUtil.warning("Loading obstacle from path ${file.path.toString()} without a valid end")
             else throw IllegalStateException("Cannot load obstacle without an end pivot of 5 redstone blocks")
         }
-
-        val region = clipboard.region
-        val origin = clipboard.origin
 
         val min = region.minimumPoint.subtract(origin).add(position)
         val max = region.maximumPoint.subtract(origin).add(position)
@@ -321,7 +365,7 @@ class ObstacleController : IController {
             world.playSound(pos, blockData.soundGroup.breakSound, SoundCategory.BLOCKS, 1f, 1f)
         }
 
-        return clipboard
+        onComplete(clipboard, position)
     }
 
     @EventHandler
@@ -343,9 +387,9 @@ class ObstacleController : IController {
             if(lastObstacle != currentObstacle.id) {
                 DebugUtil.info("Player ${player.name} entered a different obstacle with type ${currentObstacle.type.name}")
 
-                val x = currentObstacle.startPos.x().toDouble()
+                val x = currentObstacle.startPos.x().toDouble() + 0.5
                 val y = currentObstacle.startPos.y() + 2.0
-                val z = currentObstacle.startPos.z().toDouble()
+                val z = currentObstacle.startPos.z().toDouble() + 0.5
                 playerSpawns.put(player, Location(
                     player.world,
                     x,
