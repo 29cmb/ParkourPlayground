@@ -17,6 +17,7 @@ import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.listeners.PlayerListeners
+import xyz.devcmb.playground.util.DebugUtil
 import xyz.devcmb.playground.util.MiscUtils
 import java.io.File
 import java.io.IOException
@@ -29,7 +30,7 @@ import kotlin.math.min
 class LoopController : IController {
     var currentState: GameState = GameState.PRELOAD
         set(value) {
-            ParkourPlayground.pluginLogger.info("Transitioning GameState to ${value.name}")
+            DebugUtil.log("Transitioning GameState to ${value.name}", DebugUtil.DebugLogLevel.INFO)
             field = value
         }
     var prePauseState: GameState? = null
@@ -137,7 +138,7 @@ class LoopController : IController {
         try {
             this.world = worldController.setupGameWorld()
         } catch(e: WorldSetupException) {
-            ParkourPlayground.pluginLogger.severe("An error occurred trying to setup the gameplay world: ${e.message}")
+            DebugUtil.severe("An error occurred trying to setup the gameplay world: ${e.message}")
             currentState = GameState.ERROR
         }
 
@@ -161,7 +162,7 @@ class LoopController : IController {
                     obstacleController.stepObstacleLoad()
                 } catch(e: ObstacleStepException) {
                     currentState = GameState.ERROR
-                    ParkourPlayground.pluginLogger.severe("An error occurred when trying to step obstacle: ${e.message}")
+                    DebugUtil.severe("An error occurred when trying to step obstacle: ${e.message}")
                 }
             })
         })

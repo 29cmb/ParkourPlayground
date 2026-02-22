@@ -6,6 +6,7 @@ import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.controllers.*
+import xyz.devcmb.playground.util.DebugUtil
 
 object ControllerDelegate {
     private val controllers: HashMap<String, IController> = HashMap()
@@ -38,13 +39,13 @@ object ControllerDelegate {
 
         controllers[id] = controller
         controller.init() // guess who forgot this :eyes:
-        ParkourPlayground.pluginLogger.info("Controller $id registered sucessfully")
+        DebugUtil.success("Controller $id registered successfully")
     }
 
     fun getController(id: String): IController? {
         val controller: IController? = controllers[id]
         if(controller == null) {
-            ParkourPlayground.pluginLogger.warning("Controller with id $id not found")
+            DebugUtil.warning("Controller with id $id not found")
             return null
         }
 

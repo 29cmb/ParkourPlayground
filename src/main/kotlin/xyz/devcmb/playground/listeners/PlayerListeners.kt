@@ -9,6 +9,7 @@ import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
@@ -17,8 +18,10 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import xyz.devcmb.playground.Constants
 import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.annotations.Configurable
+import xyz.devcmb.playground.util.DebugUtil
 import xyz.devcmb.playground.util.Format
 
 class PlayerListeners : Listener {
@@ -50,6 +53,14 @@ class PlayerListeners : Listener {
             lobbySpawn.get(1),
             lobbySpawn.get(2)
         ))
+
+        if(Constants.IS_DEVELOPMENT) {
+            DebugUtil.subscribe(player, DebugUtil.DebugLogLevel.WARNING)
+            player.sendMessage(
+                Component.text("Developer mode is active. You have automatically be subscribed to the warning debug channel.")
+                .color(NamedTextColor.YELLOW)
+            )
+        }
     }
 
 
@@ -83,7 +94,7 @@ class PlayerListeners : Listener {
         event.isCancelled = true
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     fun onPlayerDamage(event: EntityDamageEvent) {
         if(event.entity !is Player) return
 

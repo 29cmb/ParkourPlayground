@@ -7,6 +7,7 @@ import xyz.devcmb.playground.ControllerDelegate.registerController
 import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
+import xyz.devcmb.playground.util.DebugUtil
 
 @Controller("configController", priority = Controller.Priority.HIGHEST)
 class ConfigController : IController {
@@ -52,7 +53,7 @@ class ConfigController : IController {
             }
 
             if(value != null) {
-                ParkourPlayground.pluginLogger.info("Updated field ${field.name} to $value from config")
+                DebugUtil.info("Updated field ${field.name} to $value from config")
                 field.set(null, value)
             }
         }

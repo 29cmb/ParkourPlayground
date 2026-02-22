@@ -14,6 +14,7 @@ import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
+import xyz.devcmb.playground.util.DebugUtil
 import xyz.devcmb.playground.util.MiscUtils
 import java.io.File
 import java.io.PrintWriter
@@ -48,7 +49,7 @@ class WorldController : IController {
         lobbyBukkitWorld = Bukkit.getWorld(lobbyWorld)
         if(lobbyBukkitWorld == null) {
             if(!Files.exists(Path.of(lobbyWorld))) {
-                ParkourPlayground.pluginLogger.severe("Lobby world does not exist")
+                DebugUtil.severe("Lobby world does not exist")
                 return
             }
 

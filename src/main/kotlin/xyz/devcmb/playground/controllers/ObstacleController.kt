@@ -10,6 +10,10 @@ import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.title.Title
+import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -18,11 +22,14 @@ import org.bukkit.Sound
 import org.bukkit.SoundCategory
 import org.bukkit.World
 import org.bukkit.block.data.BlockData
+import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.entity.boat.OakBoat
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDismountEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
@@ -32,6 +39,8 @@ import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
+import xyz.devcmb.playground.ui.UserInterfaceUtility
+import xyz.devcmb.playground.util.DebugUtil
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -201,6 +210,7 @@ class ObstacleController : IController {
                     .getWriter(outputStream)
                     .use { writer -> writer.write(clipboard) }
             }
+            DebugUtil.success("Saved obstacle to ${type.name.lowercase()}/$name.schem successfully")
             onSuccess()
         } catch(e: Exception) {
             onError("An error occurred while trying to save the schematic: ${e.message ?: " Unknown error"}")
@@ -246,14 +256,14 @@ class ObstacleController : IController {
 
         val pivot = getPivotLine(clipboard, BlockTypes.DIAMOND_BLOCK!!)
         if(pivot == null) {
-            if(force) ParkourPlayground.pluginLogger.warning("Loading obstacle from path ${file.path.toString()} without a valid start")
+            if(force) DebugUtil.warning("Loading obstacle from path ${file.path.toString()} without a valid start")
             else throw IllegalStateException("Cannot load obstacle without a start pivot of 5 diamond blocks")
         } else {
             clipboard.origin = pivot
         }
 
         if(getPivotLine(clipboard, BlockTypes.REDSTONE_BLOCK!!) == null) {
-            if(force) ParkourPlayground.pluginLogger.warning("Loading obstacle from path ${file.path.toString()} without a valid end")
+            if(force) DebugUtil.warning("Loading obstacle from path ${file.path.toString()} without a valid end")
             else throw IllegalStateException("Cannot load obstacle without an end pivot of 5 redstone blocks")
         }
 
@@ -284,6 +294,8 @@ class ObstacleController : IController {
         Operations.complete(operation)
         editSession.flushQueue()
         editSession.close()
+
+        DebugUtil.success("Loaded obstacle ${file.parentFile.name}/${file.name} successfully")
 
         for (pos in clipboard.region) {
             val block = clipboard.getBlock(pos)
@@ -329,35 +341,83 @@ class ObstacleController : IController {
         if (currentObstacle != null) {
             val lastObstacle = playerObstacles.get(player)
             if(lastObstacle != currentObstacle.id) {
+                DebugUtil.info("Player ${player.name} entered a different obstacle with type ${currentObstacle.type.name}")
+
+                val x = currentObstacle.startPos.x().toDouble()
+                val y = currentObstacle.startPos.y() + 2.0
+                val z = currentObstacle.startPos.z().toDouble()
                 playerSpawns.put(player, Location(
                     player.world,
-                    currentObstacle.startPos.x().toDouble(),
-                    currentObstacle.startPos.y() + 2.0,
-                    currentObstacle.startPos.z().toDouble()
+                    x,
+                    y,
+                    z
                 ))
 
-                player.inventory.clear()
+                DebugUtil.info("Set respawn point for ${player.name} to $x, $y, $z")
 
-                when(currentObstacle.type) {
-                    ObstacleType.ELYTRA -> {
-                        player.inventory.chestplate = ItemStack.of(Material.ELYTRA).apply {
-                            val meta = itemMeta
-                            meta.isUnbreakable = true
-                            itemMeta = meta
+                val loadedLastObstacle = loadedObstacles.find { it.id  == lastObstacle }
+                val lastObstacleType = loadedLastObstacle?.type ?: ObstacleType.NORMAL
+                if(lastObstacleType != currentObstacle.type) {
+                    player.inventory.clear()
+                    when(currentObstacle.type) {
+                        ObstacleType.ELYTRA -> {
+                            player.inventory.chestplate = ItemStack.of(Material.ELYTRA).apply {
+                                val meta = itemMeta
+                                meta.isUnbreakable = true
+                                itemMeta = meta
+                            }
+                        }
+                        ObstacleType.TRIDENT -> {
+                            player.inventory.setItemInMainHand(ItemStack.of(Material.TRIDENT).apply {
+                                val meta = itemMeta
+                                meta.isUnbreakable = true
+                                meta.addEnchant(Enchantment.RIPTIDE, 1, false)
+                                itemMeta = meta
+                            })
+                        }
+                        ObstacleType.NORMAL -> {}
+                        ObstacleType.WIND_CHARGE -> {
+                            player.inventory.setItemInMainHand(ItemStack.of(Material.WIND_CHARGE, 64))
                         }
                     }
-                    ObstacleType.TRIDENT -> {
-                        player.inventory.setItemInMainHand(ItemStack.of(Material.TRIDENT).apply {
-                            val meta = itemMeta
-                            meta.isUnbreakable = true
-                            meta.addEnchant(Enchantment.RIPTIDE, 1, false)
-                            itemMeta = meta
-                        })
+
+                    var subtitle = Component.empty()
+
+                    if(lastObstacleType.icon !== null) {
+                        subtitle = subtitle.append(
+                            Component.text("- [").append(
+                                Component.text(lastObstacleType.icon)
+                                    .font(UserInterfaceUtility.fonts["icons"])
+                                    .color(NamedTextColor.WHITE)
+                            ).append(Component.text("]")).color(NamedTextColor.RED)
+                        )
                     }
-                    ObstacleType.NORMAL -> {}
-                    ObstacleType.WIND_CHARGE -> {
-                        player.inventory.setItemInMainHand(ItemStack.of(Material.WIND_CHARGE, 64))
+
+                    if(currentObstacle.type.icon !== null) {
+                        if(lastObstacleType.icon !== null) {
+                            subtitle = subtitle.append(Component.text(" "))
+                        }
+
+                        subtitle = subtitle.append(
+                            Component.text("+ [").append(
+                                Component.text(currentObstacle.type.icon)
+                                    .font(UserInterfaceUtility.fonts["icons"])
+                                    .color(NamedTextColor.WHITE)
+                            ).append(Component.text("]")).color(NamedTextColor.GREEN)
+                        )
                     }
+
+                    val title = Title.title(
+                        Component.empty(),
+                        subtitle,
+                        Title.Times.times(
+                            Ticks.duration(5),
+                            Ticks.duration(40),
+                            Ticks.duration(5)
+                        )
+                    )
+
+                    player.showTitle(title)
                 }
             }
 
@@ -365,7 +425,7 @@ class ObstacleController : IController {
         }
     }
 
-    @EventHandler
+    @EventHandler()
     fun playerFallEvent(event: PlayerMoveEvent) {
         val player = event.player
         val loc = player.location
@@ -376,38 +436,36 @@ class ObstacleController : IController {
         val currentObstacle = loadedObstacles.find { it.id == playerObstacles.get(player) }
         if(currentObstacle == null) {
             if(loc.y < minYFallback) {
-                player.teleport(playerSpawns.get(player)!!)
+                respawnPlayer(player)
             }
             return
         }
 
         if(loc.y < currentObstacle.boundsMin.y() - yLenience) {
-            player.teleport(playerSpawns.get(player)!!)
+            respawnPlayer(player)
         }
     }
 
-    @EventHandler
-    fun playerMagmaCheck(event: PlayerMoveEvent) {
-        val player = event.player
+    @EventHandler(priority = EventPriority.LOW)
+    fun playerDamageEvent(event: EntityDamageEvent) {
+        if(event.isCancelled) return
 
-        val bb: BoundingBox = player.boundingBox
+        val player = event.entity
+        if(player !is Player) return
 
-        val world = player.world
-        var touchingMagma = false
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
+        if(player.world != loopController.world) return
 
-        for (x in bb.minX.toInt()..bb.maxX.toInt())
-        for (y in bb.minY.toInt()..bb.maxY.toInt())
-        for (z in bb.minZ.toInt()..bb.maxZ.toInt()) {
-            val block = world.getBlockAt(x, y, z)
-            if (block.type == Material.MAGMA_BLOCK) {
-                touchingMagma = true
-                break
-            }
-        }
+        val damageSource = event.damageSource
+        if(damageSource.damageType == DamageType.FALL || damageSource.damageType == DamageType.TRIDENT) return
 
-        if (touchingMagma) {
-            player.teleport(playerSpawns.get(player)!!)
-        }
+        event.isCancelled = true
+        respawnPlayer(player)
+    }
+
+    fun respawnPlayer(player: Player) {
+        player.fallDistance = 0f
+        player.teleport(playerSpawns.get(player)!!)
     }
 
     data class LoadableObstacle(val schematic: File)
@@ -421,10 +479,10 @@ class ObstacleController : IController {
         val boundsMax: BlockVector3
     )
 
-    enum class ObstacleType {
-        NORMAL,
-        TRIDENT,
-        ELYTRA,
-        WIND_CHARGE,
+    enum class ObstacleType(val icon: String?) {
+        NORMAL(null),
+        TRIDENT("\uE001"),
+        ELYTRA("\uE000"),
+        WIND_CHARGE("\uE002"),
     }
 }
