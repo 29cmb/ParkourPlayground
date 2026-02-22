@@ -7,7 +7,8 @@ game:
   gate_start: [2,68,7]
   gate_end: [-4,66,7]
   starting_obstacle_pivot: [-1,65,8]
-  min_y: 30
+  min_y_fallback: 30
+  y_lenience: 10
 templates:
   root_path: "templates"
   worlds_path: "worlds"

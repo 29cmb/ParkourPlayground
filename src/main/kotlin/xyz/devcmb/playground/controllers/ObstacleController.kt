@@ -26,6 +26,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDismountEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.util.BoundingBox
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.ParkourPlayground
@@ -57,8 +58,11 @@ class ObstacleController : IController {
         @field:Configurable("game.starting_position")
         var startPosition: List<Double> = listOf(-0.5, 67.0, -0.5)
 
-        @field:Configurable("game.min_y")
-        var minY: Int = 30
+        @field:Configurable("game.min_y_fallback")
+        var minYFallback: Int = 30
+
+        @field:Configurable("game.y_lenience")
+        var yLenience: Int = 10
     }
 
     override fun init() {
@@ -369,7 +373,39 @@ class ObstacleController : IController {
         val loopController = ControllerDelegate.getController("loopController") as LoopController
         if(player.world != loopController.world) return
 
-        if(loc.y < minY) {
+        val currentObstacle = loadedObstacles.find { it.id == playerObstacles.get(player) }
+        if(currentObstacle == null) {
+            if(loc.y < minYFallback) {
+                player.teleport(playerSpawns.get(player)!!)
+            }
+            return
+        }
+
+        if(loc.y < currentObstacle.boundsMin.y() - yLenience) {
+            player.teleport(playerSpawns.get(player)!!)
+        }
+    }
+
+    @EventHandler
+    fun playerMagmaCheck(event: PlayerMoveEvent) {
+        val player = event.player
+
+        val bb: BoundingBox = player.boundingBox
+
+        val world = player.world
+        var touchingMagma = false
+
+        for (x in bb.minX.toInt()..bb.maxX.toInt())
+        for (y in bb.minY.toInt()..bb.maxY.toInt())
+        for (z in bb.minZ.toInt()..bb.maxZ.toInt()) {
+            val block = world.getBlockAt(x, y, z)
+            if (block.type == Material.MAGMA_BLOCK) {
+                touchingMagma = true
+                break
+            }
+        }
+
+        if (touchingMagma) {
             player.teleport(playerSpawns.get(player)!!)
         }
     }

@@ -24,7 +24,7 @@ import java.util.*
 @Permission("playground.dev")
 class WorldCommand {
     @Execute(name = "template load")
-    fun executeWorld(@Context sender: CommandSender, @Arg world: WorldController.TemplateWorld, @Flag("-t", "--teleport") teleport: Boolean) {
+    fun templateLoad(@Context sender: CommandSender, @Arg world: WorldController.TemplateWorld, @Flag("-t", "--teleport") teleport: Boolean) {
         val worldController = ControllerDelegate.getController("worldController") as WorldController
         sender.sendMessage(Component.text("Loading template world...", NamedTextColor.GREEN))
 
