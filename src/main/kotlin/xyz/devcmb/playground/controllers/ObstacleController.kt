@@ -14,27 +14,17 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
-import org.bukkit.Axis
-import org.bukkit.Bukkit
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.Particle
-import org.bukkit.Sound
-import org.bukkit.SoundCategory
-import org.bukkit.World
-import org.bukkit.block.data.BlockData
+import org.bukkit.*
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
-import org.bukkit.entity.boat.OakBoat
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
-import org.bukkit.event.entity.EntityDismountEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.util.BoundingBox
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.ParkourPlayground
@@ -44,7 +34,7 @@ import xyz.devcmb.playground.ui.UserInterfaceUtility
 import xyz.devcmb.playground.util.DebugUtil
 import java.io.File
 import java.io.FileOutputStream
-import java.util.UUID
+import java.util.*
 import kotlin.io.path.Path
 import kotlin.math.max
 import kotlin.math.min
@@ -469,7 +459,7 @@ class ObstacleController : IController {
         }
     }
 
-    @EventHandler()
+    @EventHandler
     fun playerFallEvent(event: PlayerMoveEvent) {
         val player = event.player
         val loc = player.location
@@ -505,6 +495,34 @@ class ObstacleController : IController {
 
         event.isCancelled = true
         respawnPlayer(player)
+    }
+
+    // https://github.com/666pyke/NoWindCharge/blob/main/src/main/java/org/me/pyke/nowindcharge/WindChargeListener.java
+    @EventHandler
+    fun playerWindChargeEvent(event: PlayerInteractEvent) {
+        val player = event.player
+
+        val mainHandItem: ItemStack = player.inventory.getItemInMainHand()
+        val offHandItem: ItemStack = player.inventory.getItemInOffHand()
+
+        if ((mainHandItem.getType() != Material.WIND_CHARGE && offHandItem.getType() != Material.WIND_CHARGE) ||
+            (event.getAction() !== Action.RIGHT_CLICK_AIR && event.getAction() !== Action.RIGHT_CLICK_BLOCK)
+        ) {
+            return
+        }
+
+        Bukkit.getScheduler().runTask(ParkourPlayground.plugin, Runnable {
+            val main = player.inventory.itemInMainHand
+            val off = player.inventory.itemInOffHand
+
+            if (main.type == Material.WIND_CHARGE) {
+                main.amount = 64
+            }
+
+            if (off.type == Material.WIND_CHARGE) {
+                off.amount = 64
+            }
+        })
     }
 
     fun respawnPlayer(player: Player) {
