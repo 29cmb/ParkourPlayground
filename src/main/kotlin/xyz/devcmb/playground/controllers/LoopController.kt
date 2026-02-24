@@ -1,5 +1,7 @@
 package xyz.devcmb.playground.controllers
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -23,6 +25,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
@@ -40,7 +43,8 @@ class LoopController : IController {
     var countdown: Int = 30
     var world: World? = null
 
-    val playerStates: HashMap<Player, PlayerState> = HashMap()
+    val playerScores: HashMap<Player, Int> = HashMap()
+    val alivePlayers: HashSet<Player> = HashSet()
 
     companion object {
         @field:Configurable("game.intermission_length")
@@ -67,7 +71,7 @@ class LoopController : IController {
     }
 
     fun setup() {
-        if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) {
+        if(Bukkit.getOnlinePlayers().size < (if(Constants.IS_DEVELOPMENT) 1 else 2)) {
             playerWaiting()
             return
         }
@@ -92,7 +96,7 @@ class LoopController : IController {
             override fun run() {
                 if(currentState == GameState.PAUSED) return;
 
-                if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) return;
+                if(Bukkit.getOnlinePlayers().size < (if(Constants.IS_DEVELOPMENT) 1 else 2)) return;
                 cancel()
                 playerWaitingRunnable = null
                 setup()
@@ -109,7 +113,7 @@ class LoopController : IController {
             override fun run() {
                 if(currentState == GameState.PAUSED) return;
 
-                if(Bukkit.getOnlinePlayers().size < 2 && !Constants.IS_DEVELOPMENT) {
+                if(Bukkit.getOnlinePlayers().size < (if(Constants.IS_DEVELOPMENT) 1 else 2)) {
                     cancel()
                     countdownRunnable = null
                     countdown = intermissionLength
@@ -148,7 +152,9 @@ class LoopController : IController {
     fun preGame() {
         currentState = GameState.PREGAME
         Bukkit.getOnlinePlayers().forEach { player ->
-            playerStates.put(player, PlayerState.PREGAME)
+            alivePlayers.add(player)
+            addPlayerScore(player, 0)
+
             player.teleport(Location(world, startPosition.get(0), startPosition.get(1), startPosition.get(2)))
             player.gameMode = GameMode.ADVENTURE
         }
@@ -157,7 +163,7 @@ class LoopController : IController {
         obstacleController.pregame(this)
 
         MiscUtils.delay(3, {
-            MiscUtils.countdown(playerStates.keys, 10, this::gameOn, {
+            MiscUtils.countdown(playerScores.keys, 10, this::gameOn, {
                 try {
                     obstacleController.stepObstacleLoad()
                 } catch(e: ObstacleStepException) {
@@ -166,6 +172,25 @@ class LoopController : IController {
                 }
             })
         })
+    }
+
+    fun addPlayerScore(player: Player, score: Int) {
+        var newScore: Int =
+            if(!playerScores.containsKey(player)) score
+            else playerScores[player]!! + score
+
+        playerScores[player] = newScore
+
+        player.playerListName(
+            player.displayName().append(Component.text(" ".repeat(10)))
+                .append(Component.text(newScore.toString(), NamedTextColor.GOLD))
+        )
+    }
+
+    fun addPlayerObstacleScore(player: Player): Int {
+        val score = floor(40.0 / alivePlayers.size).toInt()
+        addPlayerScore(player, score)
+        return score
     }
 
     fun gameOn() {
@@ -228,12 +253,5 @@ class LoopController : IController {
         CLEANUP,
         PAUSED,
         ERROR
-    }
-
-    enum class PlayerState {
-        PREGAME,
-        PROGRESSING,
-        COMPLETED,
-        DEAD
     }
 }

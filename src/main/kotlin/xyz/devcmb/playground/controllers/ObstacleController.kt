@@ -373,8 +373,12 @@ class ObstacleController : IController {
         }
 
         if (currentObstacle != null) {
+            val obstacleIndex = loadedObstacles.indexOfFirst { it.id == currentObstacle.id }
             val lastObstacle = playerObstacles.get(player)
             if(lastObstacle != currentObstacle.id) {
+                val lastObstacleIndex = loadedObstacles.indexOfFirst { it.id == lastObstacle }
+                if(lastObstacleIndex > obstacleIndex) return
+
                 DebugUtil.info("Player ${player.name} entered a different obstacle with type ${currentObstacle.type.name}")
 
                 val x = currentObstacle.startPos.x().toDouble() + 0.5
@@ -391,6 +395,8 @@ class ObstacleController : IController {
 
                 val loadedLastObstacle = loadedObstacles.find { it.id  == lastObstacle }
                 val lastObstacleType = loadedLastObstacle?.type ?: ObstacleType.NORMAL
+                var subtitle = Component.empty()
+
                 if(lastObstacleType != currentObstacle.type) {
                     player.inventory.clear()
                     when(currentObstacle.type) {
@@ -415,8 +421,6 @@ class ObstacleController : IController {
                         }
                     }
 
-                    var subtitle = Component.empty()
-
                     if(lastObstacleType.icon !== null) {
                         subtitle = subtitle.append(
                             Component.text("- [").append(
@@ -440,22 +444,33 @@ class ObstacleController : IController {
                             ).append(Component.text("]")).color(NamedTextColor.GREEN)
                         )
                     }
-
-                    val title = Title.title(
-                        Component.empty(),
-                        subtitle,
-                        Title.Times.times(
-                            Ticks.duration(5),
-                            Ticks.duration(40),
-                            Ticks.duration(5)
-                        )
-                    )
-
-                    player.showTitle(title)
                 }
+
+                var mainTitle = Component.empty()
+                if(lastObstacle != null) {
+                    val score = loopController.addPlayerObstacleScore(player)
+                    mainTitle = Component.text("+${score}", NamedTextColor.GOLD)
+                    player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_CHIME, 10f, 2f)
+                }
+
+                val title = Title.title(
+                    mainTitle,
+                    subtitle,
+                    Title.Times.times(
+                        Ticks.duration(5),
+                        Ticks.duration(40),
+                        Ticks.duration(5)
+                    )
+                )
+
+                player.showTitle(title)
             }
 
             playerObstacles.put(player, currentObstacle.id)
+
+            if(obstacleIndex >= loadedObstacles.size - 3) {
+                stepObstacleLoad()
+            }
         }
     }
 

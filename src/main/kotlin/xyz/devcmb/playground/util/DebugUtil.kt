@@ -55,7 +55,7 @@ object DebugUtil {
         NONE(0),
         ERROR(1, NamedTextColor.RED, ParkourPlayground.pluginLogger::severe),
         WARNING(2, NamedTextColor.YELLOW, ParkourPlayground.pluginLogger::warning),
-        INFO(3, NamedTextColor.AQUA),
-        SUCCESS(3, NamedTextColor.GREEN)
+        SUCCESS(3, NamedTextColor.GREEN),
+        INFO(4, NamedTextColor.AQUA),
     }
 }
