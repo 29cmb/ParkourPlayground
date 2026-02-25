@@ -25,6 +25,7 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.Damageable
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.ParkourPlayground
@@ -32,6 +33,7 @@ import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.ui.UserInterfaceUtility
 import xyz.devcmb.playground.util.DebugUtil
+import xyz.devcmb.playground.util.MiscUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
@@ -456,6 +458,16 @@ class ObstacleController : IController {
 
                     mainTitle = Component.text("+${score}", NamedTextColor.GOLD)
                     player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_CHIME, 10f, 2f)
+                    MiscUtils.spawnPrivateFirework(
+                        player,
+                        FireworkEffect.builder()
+                            .trail(false)
+                            .flicker(false)
+                            .withColor(Color.YELLOW)
+                            .withColor(Color.ORANGE)
+                            .with(FireworkEffect.Type.BALL_LARGE)
+                            .build()
+                    )
                 }
 
                 val title = Title.title(
@@ -511,7 +523,11 @@ class ObstacleController : IController {
         if(player.world != loopController.world) return
 
         val damageSource = event.damageSource
-        if(damageSource.damageType == DamageType.FALL || damageSource.damageType == DamageType.TRIDENT) return
+        if(
+            damageSource.damageType == DamageType.FALL
+            || damageSource.damageType == DamageType.TRIDENT
+            || damageSource.damageType == DamageType.FIREWORKS
+        ) return
 
         event.isCancelled = true
         respawnPlayer(player)

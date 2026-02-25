@@ -7,6 +7,9 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
+import org.bukkit.Color
+import org.bukkit.FireworkEffect
+import org.bukkit.entity.Firework
 import org.bukkit.entity.Player
 import org.bukkit.generator.ChunkGenerator
 import org.bukkit.scheduler.BukkitRunnable
@@ -77,6 +80,25 @@ object MiscUtils {
             score.customName(text)
             score.score = lines.size - index
         }
+    }
+
+    fun spawnPrivateFirework(player: Player, effect: FireworkEffect, detonationDelay: Long = 2L) {
+        val world = player.world
+        val location = player.location.clone()
+
+        val firework = world.spawn(location, Firework::class.java) { fw ->
+            fw.isVisibleByDefault = false
+            fw.fireworkMeta = fw.fireworkMeta.apply {
+                addEffect(effect)
+                power = 0
+            }
+        }
+
+        player.showEntity(ParkourPlayground.plugin, firework)
+
+        Bukkit.getScheduler().runTaskLater(ParkourPlayground.plugin, Runnable {
+            firework.detonate()
+        }, detonationDelay)
     }
 
     object VoidGenerator : ChunkGenerator() {

@@ -100,7 +100,10 @@ class PlayerListeners : Listener {
     fun onPlayerDamage(event: EntityDamageEvent) {
         if(event.entity !is Player) return
 
-        if(event.damageSource.damageType == DamageType.FALL) {
+        if(
+            event.damageSource.damageType == DamageType.FALL
+            || event.damageSource.damageType == DamageType.FIREWORKS
+        ) {
             event.isCancelled = true
         }
     }
