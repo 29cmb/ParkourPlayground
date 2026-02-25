@@ -3,12 +3,15 @@ package xyz.devcmb.playground.util
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.generator.ChunkGenerator
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.scoreboard.Objective
+import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.playground.ParkourPlayground
 import java.util.TimerTask
 import kotlin.math.min
@@ -66,6 +69,14 @@ object MiscUtils {
                 }
             }
         }.runTaskTimer(ParkourPlayground.plugin, 0, 20L)
+    }
+
+    fun addScoreboardObjectiveLines(objective: Objective, lines: ArrayList<Component>) {
+        lines.forEachIndexed { index, text ->
+            val score = objective.getScore("line$index")
+            score.customName(text)
+            score.score = lines.size - index
+        }
     }
 
     object VoidGenerator : ChunkGenerator() {

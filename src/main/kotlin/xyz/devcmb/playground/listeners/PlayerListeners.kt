@@ -37,6 +37,8 @@ class PlayerListeners : Listener {
     fun onPlayerJoinEvent(event: PlayerJoinEvent) {
         val player = event.player
 
+        player.inventory.clear()
+
         event.joinMessage(
             Component.text("[").color(NamedTextColor.GRAY)
                 .append(Component.text("+").color(NamedTextColor.GREEN))

@@ -449,6 +449,11 @@ class ObstacleController : IController {
                 var mainTitle = Component.empty()
                 if(lastObstacle != null) {
                     val score = loopController.addPlayerObstacleScore(player)
+
+                    loopController.playerObstacleCounts[player] =
+                        if(loopController.playerObstacleCounts.containsKey(player)) loopController.playerObstacleCounts[player]!! + 1
+                        else 1
+
                     mainTitle = Component.text("+${score}", NamedTextColor.GOLD)
                     player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_CHIME, 10f, 2f)
                 }

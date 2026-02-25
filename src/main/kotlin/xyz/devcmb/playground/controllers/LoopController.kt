@@ -44,6 +44,7 @@ class LoopController : IController {
     var world: World? = null
 
     val playerScores: HashMap<Player, Int> = HashMap()
+    val playerObstacleCounts: HashMap<Player, Int> = HashMap()
     val alivePlayers: HashSet<Player> = HashSet()
 
     companion object {
@@ -210,9 +211,17 @@ class LoopController : IController {
         }
 
         currentState = GameState.GAME_ON
+        val uiController = ControllerDelegate.getController("uiController") as UIController
+        uiController.playerControllers.forEach {
+            it.activateScoreboard("activeGameScoreboard")
+        }
     }
 
     fun reset() {
+        playerScores.clear()
+        playerObstacleCounts.clear()
+        alivePlayers.clear()
+
         Bukkit.getOnlinePlayers().forEach { player ->
             player.teleport(Location(
                 Bukkit.getWorld(lobbyWorld),

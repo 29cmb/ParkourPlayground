@@ -1,6 +1,7 @@
 package xyz.devcmb.playground.controllers
 
 import com.destroystokyo.paper.event.server.ServerTickStartEvent
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent

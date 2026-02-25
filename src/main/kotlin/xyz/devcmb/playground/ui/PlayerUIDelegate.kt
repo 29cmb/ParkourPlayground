@@ -7,28 +7,42 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.scoreboard.Objective
 import xyz.devcmb.playground.Constants
+import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ParkourPlayground
+import xyz.devcmb.playground.controllers.LoopController
 import xyz.devcmb.playground.ui.actionbar.DebugActionBar
 import xyz.devcmb.playground.ui.actionbar.IActionBar
 import xyz.devcmb.playground.ui.bossbar.DebugInfoBossBar
 import xyz.devcmb.playground.ui.bossbar.GameStateBossBar
 import xyz.devcmb.playground.ui.bossbar.IBossBar
+import xyz.devcmb.playground.ui.scoreboard.ActiveGameScoreboard
+import xyz.devcmb.playground.ui.scoreboard.IScoreboard
 
 class PlayerUIDelegate(val player: Player) {
-    val actionBars: ArrayList<IActionBar> = ArrayList()
     var activeActionBar: String? = null
     var actionBarRunnable: BukkitRunnable? = null
 
+    var activeScoreboards: ArrayList<String> = ArrayList()
+    var activeScoreboardObjectives: HashMap<String, Set<Objective>> = HashMap()
+
+    val actionBars: ArrayList<IActionBar> = ArrayList()
     val bossBars: ArrayList<IBossBar> = ArrayList()
+    val scoreboards: ArrayList<IScoreboard> = ArrayList()
+
     val activeBossBars: HashMap<String, BossBar> = HashMap()
     val paddingBossBars: HashMap<String, ArrayList<BossBar>> = HashMap()
+
+    val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
 
     init {
         actionBars.add(DebugActionBar(player))
 
         bossBars.add(DebugInfoBossBar(player))
         bossBars.add(GameStateBossBar(player))
+
+        scoreboards.add(ActiveGameScoreboard(player))
 
         activateBossBar("gameStateBossBar")
 
@@ -37,12 +51,27 @@ class PlayerUIDelegate(val player: Player) {
             activateBossBar("debugInfoBossBar")
         }
 
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
+        if(loopController.currentState == LoopController.GameState.GAME_ON) {
+            activateScoreboard("activeGameScoreboard")
+        }
+
+        player.scoreboard = playerScoreboard
         Bukkit.getScheduler().runTaskTimer(ParkourPlayground.plugin, Runnable {
             bossBars.forEach {
                 if(activeBossBars.containsKey(it.id)) {
                     val bar = activeBossBars[it.id]!!
                     bar.name(it.getComponent())
                 }
+            }
+
+            playerScoreboard.objectives.forEach {
+                it.unregister()
+            }
+
+            activeScoreboards.forEach { id ->
+                val scoreboard = scoreboards.find { it.id == id }!!
+                scoreboard.getObjectives(playerScoreboard)
             }
         }, 0, 5)
     }
@@ -112,5 +141,27 @@ class PlayerUIDelegate(val player: Player) {
 
         activeBossBars.remove(id)
         paddingBossBars.remove(id)
+    }
+
+    fun activateScoreboard(id: String) {
+        val scoreboard = scoreboards.find { it.id == id }
+        if(scoreboard == null) throw IllegalArgumentException("Unknown Scoreboard ID: $id")
+
+        if(activeScoreboards.contains(id)) throw IllegalStateException("Scoreboard with ID $id is already active")
+
+        activeScoreboards.add(id)
+    }
+
+    fun deactivateScoreboard(id: String) {
+        val scoreboard = scoreboards.find { it.id == id }
+        if(scoreboard == null) throw IllegalArgumentException("Unknown Scoreboard ID: $id")
+
+        if(!activeScoreboards.contains(id)) throw IllegalStateException("Scoreboard with ID $id is not active")
+        activeScoreboards.remove(id)
+
+        val activeObjectives = activeScoreboardObjectives[id] ?: arrayListOf()
+        activeObjectives.forEach {
+            it.unregister()
+        }
     }
 }
