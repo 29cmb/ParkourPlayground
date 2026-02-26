@@ -2,13 +2,11 @@ package xyz.devcmb.playground.controllers
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
-import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.Constants
@@ -18,13 +16,8 @@ import xyz.devcmb.playground.ParkourPlayground
 import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
-import xyz.devcmb.playground.listeners.PlayerListeners
 import xyz.devcmb.playground.util.DebugUtil
 import xyz.devcmb.playground.util.MiscUtils
-import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -60,10 +53,10 @@ class LoopController : IController {
         @field:Configurable("game.gate_end")
         var gateEndPosition: List<Int> = listOf(-4,66,7)
 
-        @Configurable("lobby.position")
+        @field:Configurable("lobby.position")
         var lobbySpawn: List<Double> = listOf(0.5,67.0,0.5)
 
-        @Configurable("lobby.world")
+        @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
     }
 
@@ -152,6 +145,7 @@ class LoopController : IController {
 
     fun preGame() {
         currentState = GameState.PREGAME
+
         Bukkit.getOnlinePlayers().forEach { player ->
             alivePlayers.add(player)
             addPlayerScore(player, 0)
@@ -211,6 +205,10 @@ class LoopController : IController {
         }
 
         currentState = GameState.GAME_ON
+
+        val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
+        obstacleController.gameOn()
+
         val uiController = ControllerDelegate.getController("uiController") as UIController
         uiController.playerControllers.forEach {
             it.activateScoreboard("activeGameScoreboard")

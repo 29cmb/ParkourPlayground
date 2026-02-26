@@ -10,6 +10,7 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.controllers.LoopController
+import xyz.devcmb.playground.controllers.ObstacleController
 import xyz.devcmb.playground.ui.UserInterfaceUtility
 import xyz.devcmb.playground.util.Format
 import xyz.devcmb.playground.util.MiscUtils
@@ -28,6 +29,8 @@ class ActiveGameScoreboard(val player: Player) : IScoreboard {
         objective.displaySlot = DisplaySlot.SIDEBAR
 
         val loopController = ControllerDelegate.getController("loopController") as LoopController
+        val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
+
         val sortedScores = loopController.playerScores.entries.sortedByDescending { (_, value) -> value }
         val playerPlacement = sortedScores.indexOfFirst { it.key == player } + 1
 
@@ -72,6 +75,10 @@ class ActiveGameScoreboard(val player: Player) : IScoreboard {
         }
 
         MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
+            Component.empty(),
+            Component.text("Crumble speed: ", NamedTextColor.WHITE)
+                .append(Component.text("${obstacleController.currentCrumbleSpeedMultiplier}x", NamedTextColor.YELLOW))
+                .font(UserInterfaceUtility.fonts["normal"]),
             Component.empty(),
             Component.text("Your score: ", NamedTextColor.WHITE)
                 .append(Component.text(loopController.playerScores.get(player) ?: 0, NamedTextColor.GOLD))

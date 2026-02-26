@@ -9,6 +9,18 @@ game:
   starting_obstacle_pivot: [-1,65,8]
   min_y_fallback: 30
   y_lenience: 10
+  crumble:
+    # Base amount of time it takes for an obstacle to crumble
+    base_interval: 10.0
+    # The starting speed multiplier at the beginning of a game
+    starting_speed_multiplier: 0.5
+    # The time it takes to increase the speed multiplier by `multiplier_increase`
+    # (this increase only takes affect after the current obstacle has crumbled)
+    increase_interval: 25.0
+    # See above
+    multiplier_increase: 0.5
+    # The visual time it takes for an obstacle to crumble
+    crumble_time: 5.0
 templates:
   root_path: "templates"
   worlds_path: "worlds"

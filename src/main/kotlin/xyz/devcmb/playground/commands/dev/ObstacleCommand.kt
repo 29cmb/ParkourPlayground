@@ -77,4 +77,11 @@ class ObstacleCommand {
             sender.sendMessage(Component.text("An error occurred trying to step the obstacle loading: ${e.message}", NamedTextColor.RED))
         }
     }
+
+    @Execute(name = "crumble")
+    fun executeCrumble(@Context sender: CommandSender) {
+        val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
+        obstacleController.crumbleObstacle()
+        sender.sendMessage(Component.text("Started crumbling an obstacle!", NamedTextColor.GREEN))
+    }
 }

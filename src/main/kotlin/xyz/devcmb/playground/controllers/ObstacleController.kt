@@ -26,6 +26,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.Damageable
+import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.ParkourPlayground
@@ -65,7 +66,29 @@ class ObstacleController : IController {
 
         @field:Configurable("game.y_lenience")
         var yLenience: Int = 10
+
+        @field:Configurable("game.crumble.base_interval")
+        var baseCrumbleInterval: Double = 10.0
+
+        @field:Configurable("game.crumble.starting_speed_multiplier")
+        var startingCrumbleMultiplier: Double = 0.5
+
+        @field:Configurable("game.crumble.increase_interval")
+        var crumbleSpeedIncreaseInterval: Double = 15.0
+
+        @field:Configurable("game.crumble.multiplier_increase")
+        var crumbleSpeedMultiplierIncrease: Double = 0.5
+
+        @field:Configurable("game.crumble.crumble_time")
+        var crumbleTime: Double = 5.0
     }
+
+    var currentCrumbleSpeedMultiplier = startingCrumbleMultiplier
+    var increaseNextCycle: Boolean = false
+    var crumbleTask: BukkitRunnable? = null
+    var increaseSpeedTask: BukkitRunnable? = null
+    var crumblingObstacles: MutableSet<UUID> = mutableSetOf()
+    var crumblingObstacleTasks: ArrayList<BukkitRunnable> = ArrayList()
 
     override fun init() {
     }
@@ -83,6 +106,12 @@ class ObstacleController : IController {
                 startPosition[2]
             ))
         }
+    }
+
+    fun gameOn() {
+        currentCrumbleSpeedMultiplier = startingCrumbleMultiplier
+        startCrumbleTask()
+        startIncreaseSpeedTask()
     }
 
     fun stepObstacleLoad(type: ObstacleType? = null) {
@@ -360,6 +389,109 @@ class ObstacleController : IController {
         onComplete(clipboard, position)
     }
 
+    fun respawnPlayer(player: Player) {
+        player.fallDistance = 0f
+        player.teleport(playerSpawns.get(player)!!)
+    }
+
+    fun startCrumbleTask() {
+        crumbleTask = object : BukkitRunnable() {
+            override fun run() {
+                crumbleObstacle()
+
+                if(increaseNextCycle) {
+                    increaseNextCycle = false
+                    this.cancel()
+                    Bukkit.broadcast(Component.text("Crumble speed increasing!", NamedTextColor.RED))
+                    currentCrumbleSpeedMultiplier += crumbleSpeedMultiplierIncrease
+                    DebugUtil.info("Increasing crumble speed to ${currentCrumbleSpeedMultiplier}x")
+                    startCrumbleTask()
+                    startIncreaseSpeedTask()
+                }
+            }
+        }
+
+        val interval = (baseCrumbleInterval / currentCrumbleSpeedMultiplier).toLong() * 20
+        DebugUtil.info("Started a crumble task with an interval of $interval")
+        crumbleTask!!.runTaskTimer(ParkourPlayground.plugin, interval, interval)
+    }
+
+    fun startIncreaseSpeedTask() {
+        increaseSpeedTask = object : BukkitRunnable() {
+            override fun run() {
+                increaseNextCycle = true
+            }
+        }
+        increaseSpeedTask!!.runTaskLater(ParkourPlayground.plugin, (crumbleSpeedIncreaseInterval * 20).toLong())
+    }
+
+    fun crumbleObstacle() {
+        var firstObstacle: LoadedObstacle
+        try {
+            firstObstacle = loadedObstacles.first { !crumblingObstacles.contains(it.id) }
+        } catch(e: NoSuchElementException) {
+            DebugUtil.warning("Could not find an obstacle that is not actively being crumbled.")
+            return
+        }
+
+        crumblingObstacles.add(firstObstacle.id)
+
+        DebugUtil.info("Crumbling obstacle with id ${firstObstacle.id}")
+
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
+        val crumblingBlocks = ArrayList<Location>()
+        val allBlocks = ArrayList<Location>()
+
+        for(x in firstObstacle.boundsMin.x()..firstObstacle.boundsMax.x())
+        for(y in firstObstacle.boundsMin.y()..firstObstacle.boundsMax.y())
+        for(z in firstObstacle.boundsMin.z()..firstObstacle.boundsMax.z()) {
+            val block = loopController.world?.getBlockAt(x,y,z) ?: continue
+
+            allBlocks.add(block.location)
+            if(block.type != Material.AIR && (1..3).random() == 1) {
+                crumblingBlocks.add(Location(loopController.world, x.toDouble(), y.toDouble(), z.toDouble()))
+            }
+        }
+
+        var runs = 0
+        val runnable = object : BukkitRunnable() {
+            override fun run() {
+                if(runs >= 10) {
+                    this.cancel()
+                    allBlocks.forEach {
+                        val blockData = it.world.getBlockData(it)
+                        it.world.spawnParticle(
+                            Particle.BLOCK,
+                            it,
+                            20,
+                            0.0,
+                            0.0,
+                            0.0,
+                            blockData
+                        )
+                        it.block.type = Material.AIR
+                    }
+
+                    loadedObstacles.remove(firstObstacle)
+                    // TODO: Eliminate all players in the obstacle
+                    return
+                }
+
+                runs += 1
+                Bukkit.getOnlinePlayers().forEach { plr ->
+                    crumblingBlocks.forEach {
+                        if(plr.world == it.world && plr.location.distanceSquared(it) < 64*64) {
+                            plr.sendBlockDamage(it, runs / 10f, (0..1000000000).random())
+                        }
+                    }
+                }
+            }
+        }
+
+        val interval = ((crumbleTime * 20) / 10).toLong()
+        runnable.runTaskTimer(ParkourPlayground.plugin, interval, interval)
+    }
+
     @EventHandler
     fun playerObstacleHandle(event: PlayerMoveEvent) {
         val player = event.player
@@ -559,11 +691,6 @@ class ObstacleController : IController {
                 off.amount = 64
             }
         })
-    }
-
-    fun respawnPlayer(player: Player) {
-        player.fallDistance = 0f
-        player.teleport(playerSpawns.get(player)!!)
     }
 
     data class LoadableObstacle(val schematic: File)
