@@ -11,6 +11,9 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.Constants
 import xyz.devcmb.playground.ControllerDelegate
@@ -165,6 +168,8 @@ class LoopController : IController {
 
         MiscUtils.delay(3, {
             MiscUtils.countdown(playerScores.keys, 10, this::gameOn, {
+                if(currentState != GameState.PREGAME) return@countdown
+
                 try {
                     obstacleController.stepObstacleLoad()
                 } catch(e: ObstacleStepException) {
@@ -195,7 +200,7 @@ class LoopController : IController {
     }
 
     fun gameOn() {
-        if(currentState == GameState.ERROR) return;
+        if(currentState != GameState.PREGAME) return;
 
         var startX = gateStartPosition.get(0)
         var startY = gateStartPosition.get(1)
@@ -325,6 +330,30 @@ class LoopController : IController {
         prePauseState = null
         currentState = GameState.PRELOAD
         setup()
+    }
+
+    @EventHandler
+    fun playerJoin(event: PlayerJoinEvent) {
+        val player = event.player
+        val allowedStates = setOf(GameState.PRELOAD, GameState.PREPARING_WORLD, GameState.PLAYER_WAITING, GameState.PAUSED)
+        if(!allowedStates.contains(currentState) || (currentState == GameState.PAUSED && !allowedStates.contains(prePauseState))) {
+            player.gameMode = GameMode.SPECTATOR
+            player.teleport(Location(world, startPosition[0], startPosition[1], startPosition[2]))
+            player.sendMessage(Component.text("A game is currently active, you will join after the game ends.", NamedTextColor.YELLOW))
+        } else {
+            player.gameMode = GameMode.ADVENTURE
+            player.teleport(Location(
+                Bukkit.getWorld(lobbyWorld),
+                lobbySpawn.get(0),
+                lobbySpawn.get(1),
+                lobbySpawn.get(2)
+            ))
+        }
+    }
+
+    @EventHandler
+    fun playerLeave(event: PlayerQuitEvent) {
+        eliminatePlayer(event.player)
     }
 
     enum class GameState {

@@ -9,12 +9,23 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.util.DebugUtil
+import java.util.Optional
+import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "debug")
 class DebugCommand {
-
     @Execute(name = "logging subscribe")
-    fun executeDebug(@Context player: Player, @Arg loggingLevel: DebugUtil.DebugLogLevel) {
+    fun executeDebug(@Context player: Player, @Arg loggingLevel: Optional<DebugUtil.DebugLogLevel>) {
+        val loggingLevel = loggingLevel.getOrNull()
+        if(loggingLevel == null) {
+            player.sendMessage(
+                Component.text(
+                    "You are currently in the ${DebugUtil.loggingSubscriptions.getOrElse(player, { DebugUtil.DebugLogLevel.NONE })} logging group",
+                    NamedTextColor.YELLOW
+                )
+            )
+            return
+        }
         DebugUtil.subscribe(player, loggingLevel)
         player.sendMessage(Component.text("Subscribed to the ${loggingLevel.name.lowercase()} logging channel successfully!", NamedTextColor.GREEN))
 

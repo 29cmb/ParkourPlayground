@@ -459,6 +459,10 @@ class ObstacleController : IController {
                 if(runs >= 10) {
                     this.cancel()
                     allBlocks.forEach {
+                        Bukkit.getOnlinePlayers().forEach { plr ->
+                            plr.sendBlockDamage(it, 0f, (0..1000000000).random())
+                        }
+
                         val blockData = it.world.getBlockData(it)
                         it.world.spawnParticle(
                             Particle.BLOCK,
@@ -489,6 +493,7 @@ class ObstacleController : IController {
 
         val interval = ((crumbleTime * 20) / 10).toLong()
         runnable.runTaskTimer(ParkourPlayground.plugin, interval, interval)
+        crumblingObstacleTasks.add(runnable)
     }
 
     fun gameOver() {
@@ -511,7 +516,11 @@ class ObstacleController : IController {
         val loc = player.location
 
         val loopController = ControllerDelegate.getController("loopController") as LoopController
-        if(player.world != loopController.world|| !loopController.alivePlayers.contains(player)) return
+        if(
+            player.world != loopController.world
+            || !loopController.alivePlayers.contains(player)
+            || loopController.currentState != LoopController.GameState.GAME_ON
+        ) return
 
         val currentObstacle = loadedObstacles.find { obstacle ->
             loc.blockX in obstacle.boundsMin.x()..obstacle.boundsMax.x() &&
