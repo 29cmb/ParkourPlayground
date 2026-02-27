@@ -473,7 +473,6 @@ class ObstacleController : IController {
                     }
 
                     loadedObstacles.remove(firstObstacle)
-                    // TODO: Eliminate all players in the obstacle
                     return
                 }
 
@@ -492,13 +491,27 @@ class ObstacleController : IController {
         runnable.runTaskTimer(ParkourPlayground.plugin, interval, interval)
     }
 
+    fun gameOver() {
+        crumblingObstacleTasks.forEach {
+            it.cancel()
+        }
+
+        crumblingObstacleTasks.clear()
+
+        increaseSpeedTask?.cancel()
+        increaseSpeedTask = null
+
+        crumbleTask?.cancel()
+        crumbleTask = null
+    }
+
     @EventHandler
     fun playerObstacleHandle(event: PlayerMoveEvent) {
         val player = event.player
         val loc = player.location
 
         val loopController = ControllerDelegate.getController("loopController") as LoopController
-        if(player.world != loopController.world) return
+        if(player.world != loopController.world|| !loopController.alivePlayers.contains(player)) return
 
         val currentObstacle = loadedObstacles.find { obstacle ->
             loc.blockX in obstacle.boundsMin.x()..obstacle.boundsMax.x() &&
@@ -629,12 +642,13 @@ class ObstacleController : IController {
         val loc = player.location
 
         val loopController = ControllerDelegate.getController("loopController") as LoopController
-        if(player.world != loopController.world) return
+        if(player.world != loopController.world || !loopController.alivePlayers.contains(player)) return
 
         val currentObstacle = loadedObstacles.find { it.id == playerObstacles.get(player) }
         if(currentObstacle == null) {
             if(loc.y < minYFallback) {
                 respawnPlayer(player)
+                loopController.eliminatePlayer(player)
             }
             return
         }
@@ -652,7 +666,7 @@ class ObstacleController : IController {
         if(player !is Player) return
 
         val loopController = ControllerDelegate.getController("loopController") as LoopController
-        if(player.world != loopController.world) return
+        if(player.world != loopController.world || !loopController.alivePlayers.contains(player)) return
 
         val damageSource = event.damageSource
         if(

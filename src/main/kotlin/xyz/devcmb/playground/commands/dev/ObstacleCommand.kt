@@ -12,6 +12,7 @@ import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import xyz.devcmb.playground.ControllerDelegate
@@ -78,10 +79,18 @@ class ObstacleCommand {
         }
     }
 
-    @Execute(name = "crumble")
+    @Execute(name = "crumble step")
     fun executeCrumble(@Context sender: CommandSender) {
         val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
         obstacleController.crumbleObstacle()
         sender.sendMessage(Component.text("Started crumbling an obstacle!", NamedTextColor.GREEN))
+    }
+
+    @Execute(name = "crumble speed")
+    fun executeSpeed(@Context sender: CommandSender, @Arg speed: Double) {
+        val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
+        obstacleController.currentCrumbleSpeedMultiplier = speed
+        Bukkit.broadcast(Component.text("Crumble speed increasing!", NamedTextColor.RED))
+        sender.sendMessage(Component.text("Set the crumble speed successfully!", NamedTextColor.GREEN))
     }
 }

@@ -41,10 +41,15 @@ class ActiveGameScoreboard(val player: Player) : IScoreboard {
             playerPlacement <= 1 -> {
                 for (i in 0..minOf(2, lastIndex)) {
                     val score = sortedScores[i]
+                    var plrName = Format.formatPlayerName(score.key)
+                    if(!loopController.alivePlayers.contains(score.key)) {
+                        plrName = plrName.color(NamedTextColor.GRAY)
+                    }
+
                     leaderboard.add(
                         Component.empty()
                             .append(Component.text("#${i + 1} ", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD))
-                            .append(Format.formatPlayerName(score.key))
+                            .append(plrName)
                             .append(Component.text(".".repeat(40), NamedTextColor.GRAY))
                             .append(Component.text(score.value, NamedTextColor.GOLD))
                     )
@@ -54,8 +59,15 @@ class ActiveGameScoreboard(val player: Player) : IScoreboard {
             playerPlacement >= lastIndex -> {
                 for (i in maxOf(0, lastIndex - 1)..lastIndex) {
                     val score = sortedScores[i]
+                    var plrName = Format.formatPlayerName(score.key)
+                    if(!loopController.alivePlayers.contains(score.key)) {
+                        plrName = plrName.color(NamedTextColor.GRAY)
+                    }
+
                     leaderboard.add(
-                        Format.formatPlayerName(score.key)
+                        Component.empty()
+                            .append(Component.text("#${i + 1} ", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD))
+                            .append(plrName)
                             .append(Component.text(".".repeat(20), NamedTextColor.GRAY))
                             .append(Component.text(score.value, NamedTextColor.GOLD))
                     )
@@ -65,8 +77,15 @@ class ActiveGameScoreboard(val player: Player) : IScoreboard {
             else -> {
                 for (i in (playerPlacement - 1)..(playerPlacement + 1)) {
                     val score = sortedScores[i]
+                    var plrName = Format.formatPlayerName(score.key)
+                    if(!loopController.alivePlayers.contains(score.key)) {
+                        plrName = plrName.color(NamedTextColor.GRAY)
+                    }
+
                     leaderboard.add(
-                        Format.formatPlayerName(score.key)
+                        Component.empty()
+                            .append(Component.text("#${i + 1} ", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD))
+                            .append(plrName)
                             .append(Component.text(".".repeat(20), NamedTextColor.GRAY))
                             .append(Component.text(score.value, NamedTextColor.GOLD))
                     )

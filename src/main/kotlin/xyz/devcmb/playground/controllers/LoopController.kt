@@ -2,6 +2,9 @@ package xyz.devcmb.playground.controllers
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title
+import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
@@ -17,7 +20,10 @@ import xyz.devcmb.playground.WorldSetupException
 import xyz.devcmb.playground.annotations.Configurable
 import xyz.devcmb.playground.annotations.Controller
 import xyz.devcmb.playground.util.DebugUtil
+import xyz.devcmb.playground.util.Format
 import xyz.devcmb.playground.util.MiscUtils
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -215,6 +221,67 @@ class LoopController : IController {
         }
     }
 
+    fun eliminatePlayer(player: Player) {
+        alivePlayers.remove(player)
+        player.gameMode = GameMode.SPECTATOR
+        Bukkit.broadcast(Format.formatPlayerName(player).append(Component.text(" has been eliminated!", NamedTextColor.RED)))
+
+        if(alivePlayers.size <= 1) {
+            var winner: Player? = playerScores.maxByOrNull { it.value }?.key
+            endGame(winner)
+        }
+    }
+
+    fun endGame(winner: Player?) {
+        currentState = GameState.GAME_END
+
+        val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
+        obstacleController.gameOver()
+
+        val winner = Component.text("Winner: ", NamedTextColor.GREEN)
+            .append(
+                if(winner != null) Format.formatPlayerName(winner)
+                else Component.text("Nobody!", NamedTextColor.WHITE)
+            )
+
+        Bukkit.getOnlinePlayers().forEach {
+            it.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                winner,
+                Title.Times.times(Ticks.duration(0), Ticks.duration(50), Ticks.duration(20))
+            ))
+        }
+
+        Bukkit.broadcast(winner)
+        MiscUtils.delay(4, {
+            var scoreboard = Component.text("-----------------------------------", NamedTextColor.AQUA)
+                .append(Component.newline())
+
+            val sortedScores = playerScores.entries.sortedByDescending { (_, value) -> value }
+            sortedScores.forEachIndexed { i, entry ->
+                if(i > 2) return@forEachIndexed
+
+                var plrName = Format.formatPlayerName(entry.key)
+
+                scoreboard = scoreboard.append(
+                    Component.empty()
+                        .append(Component.text("#${i + 1} ", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD))
+                        .append(plrName)
+                        .append(Component.text(".".repeat(40), NamedTextColor.GRAY))
+                        .append(Component.text(entry.value, NamedTextColor.GOLD))
+                        .append(Component.newline())
+                )
+            }
+
+            scoreboard = scoreboard.append(Component.text("-----------------------------------", NamedTextColor.AQUA))
+            Bukkit.broadcast(scoreboard)
+
+            MiscUtils.delay(5, {
+                reset()
+            })
+        })
+    }
+
     fun reset() {
         playerScores.clear()
         playerObstacleCounts.clear()
@@ -227,6 +294,17 @@ class LoopController : IController {
                 lobbySpawn.get(1),
                 lobbySpawn.get(2)
             ))
+
+
+            player.gameMode = GameMode.ADVENTURE
+            player.inventory.clear()
+        }
+
+        val uiController = ControllerDelegate.getController("uiController") as UIController
+        uiController.playerControllers.forEach {
+            if(it.activeScoreboards.contains("activeGameScoreboard")){
+                it.deactivateScoreboard("activeGameScoreboard")
+            }
         }
 
         if(playerWaitingRunnable != null) {
