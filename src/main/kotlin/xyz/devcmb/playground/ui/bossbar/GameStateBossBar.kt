@@ -2,6 +2,7 @@ package xyz.devcmb.playground.ui.bossbar
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.controllers.LoopController
@@ -15,7 +16,7 @@ class GameStateBossBar(val player: Player) : IBossBar {
         val loopController = ControllerDelegate.getController("loopController") as LoopController
         return when(loopController.currentState) {
             LoopController.GameState.PLAYER_WAITING ->
-                Component.text("Waiting for players")
+                Component.text("Waiting for players (${Bukkit.getOnlinePlayers().size}/2)")
             LoopController.GameState.INTERMISSION ->
                 Component.text("Intermission - ${Format.formatTime(loopController.countdown)}")
             LoopController.GameState.PREPARING_WORLD ->
