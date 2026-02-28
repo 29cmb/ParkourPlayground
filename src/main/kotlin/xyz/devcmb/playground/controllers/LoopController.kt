@@ -364,7 +364,6 @@ class LoopController : IController {
         PREGAME,
         GAME_ON,
         GAME_END,
-        CLEANUP,
         PAUSED,
         ERROR
     }

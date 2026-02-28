@@ -20,6 +20,12 @@ class GameStateBossBar(val player: Player) : IBossBar {
                 Component.text("Intermission - ${Format.formatTime(loopController.countdown)}")
             LoopController.GameState.PREPARING_WORLD ->
                 Component.text("Loading world...")
+            LoopController.GameState.PREGAME ->
+                Component.text("The game is about to begin!")
+            LoopController.GameState.GAME_ON ->
+                Component.text("A game is currently active!")
+            LoopController.GameState.GAME_END ->
+                Component.text("Game over!")
 
 
             LoopController.GameState.PAUSED ->

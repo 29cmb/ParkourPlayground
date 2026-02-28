@@ -16,6 +16,10 @@ game:
   gate_start: [2,68,7]
   # The ending position of the gate that prevents people from starting early
   gate_end: [-4,66,7]
+  # The start position of the spawn location to crumble away (should be enough where players cannot survive when it crumbles)
+  spawn_start: [5,62,-5]
+  # Same as above
+  spawn_end: [-7,72,10]
   # The position that obstacles start snapping to
   starting_obstacle_pivot: [-1,65,8]
   # The y position to eliminate players at (or for a fallback if something goes wrong)

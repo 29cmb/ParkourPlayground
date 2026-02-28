@@ -15,6 +15,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.*
+import org.bukkit.block.Block
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
@@ -47,6 +48,14 @@ class ObstacleController : IController {
     val loadedObstacles: ArrayList<LoadedObstacle> = ArrayList()
     val playerObstacles: HashMap<Player, UUID> = HashMap()
     val playerSpawns: HashMap<Player, Location> = HashMap()
+    val startingPlatform: ArrayList<Block> = ArrayList()
+
+    var currentCrumbleSpeedMultiplier = startingCrumbleMultiplier
+    var increaseNextCycle: Boolean = false
+    var crumbleTask: BukkitRunnable? = null
+    var increaseSpeedTask: BukkitRunnable? = null
+    var crumblingObstacles: MutableSet<UUID> = mutableSetOf()
+    var crumblingObstacleTasks: ArrayList<BukkitRunnable> = ArrayList()
 
     companion object {
         @field:Configurable("templates.root_path")
@@ -63,6 +72,12 @@ class ObstacleController : IController {
 
         @field:Configurable("game.min_y_fallback")
         var minYFallback: Int = 30
+
+        @field:Configurable("game.spawn_start")
+        var spawnStart: List<Int> = listOf(5, 62, -5)
+
+        @field:Configurable("game.spawn_end")
+        var spawnEnd: List<Int> = listOf(-7, 72, 10)
 
         @field:Configurable("game.y_lenience")
         var yLenience: Int = 10
@@ -83,13 +98,6 @@ class ObstacleController : IController {
         var crumbleTime: Double = 5.0
     }
 
-    var currentCrumbleSpeedMultiplier = startingCrumbleMultiplier
-    var increaseNextCycle: Boolean = false
-    var crumbleTask: BukkitRunnable? = null
-    var increaseSpeedTask: BukkitRunnable? = null
-    var crumblingObstacles: MutableSet<UUID> = mutableSetOf()
-    var crumblingObstacleTasks: ArrayList<BukkitRunnable> = ArrayList()
-
     override fun init() {
     }
 
@@ -97,6 +105,15 @@ class ObstacleController : IController {
         playerSpawns.clear()
         playerObstacles.clear()
         loadedObstacles.clear()
+
+        for (x in min(spawnStart[0], spawnEnd[0])..max(spawnStart[0], spawnEnd[0]))
+        for (y in min(spawnStart[1], spawnEnd[1])..max(spawnStart[1], spawnEnd[1]))
+        for (z in min(spawnStart[2], spawnEnd[2])..max(spawnStart[2], spawnEnd[2])) {
+            val block = loopController.world!!.getBlockAt(x, y, z)
+            if (!block.type.isAir) {
+                startingPlatform.add(block)
+            }
+        }
 
         Bukkit.getOnlinePlayers().forEach {
             playerSpawns.put(it, Location(
@@ -110,8 +127,14 @@ class ObstacleController : IController {
 
     fun gameOn() {
         currentCrumbleSpeedMultiplier = startingCrumbleMultiplier
-        startCrumbleTask()
-        startIncreaseSpeedTask()
+
+        MiscUtils.delay(5, {
+            crumbleBlocks(startingPlatform, null)
+            MiscUtils.delay(crumbleTime.toInt()) {
+                startCrumbleTask()
+                startIncreaseSpeedTask()
+            }
+        })
     }
 
     fun stepObstacleLoad(type: ObstacleType? = null) {
@@ -395,8 +418,11 @@ class ObstacleController : IController {
     }
 
     fun startCrumbleTask() {
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
         crumbleTask = object : BukkitRunnable() {
             override fun run() {
+                if(loopController.currentState == LoopController.GameState.PAUSED || loopController.world == null) return;
+
                 crumbleObstacle()
 
                 if(increaseNextCycle) {
@@ -439,52 +465,71 @@ class ObstacleController : IController {
         DebugUtil.info("Crumbling obstacle with id ${firstObstacle.id}")
 
         val loopController = ControllerDelegate.getController("loopController") as LoopController
-        val crumblingBlocks = ArrayList<Location>()
-        val allBlocks = ArrayList<Location>()
 
+        val blocks: ArrayList<Block> = ArrayList()
         for(x in firstObstacle.boundsMin.x()..firstObstacle.boundsMax.x())
         for(y in firstObstacle.boundsMin.y()..firstObstacle.boundsMax.y())
         for(z in firstObstacle.boundsMin.z()..firstObstacle.boundsMax.z()) {
-            val block = loopController.world?.getBlockAt(x,y,z) ?: continue
+            val block = loopController.world!!.getBlockAt(Location(
+                loopController.world!!,
+                x.toDouble(),
+                y.toDouble(),
+                z.toDouble()
+            ))
+            if(block.type == Material.AIR) continue
 
-            allBlocks.add(block.location)
+            blocks.add(block)
+        }
+
+        crumbleBlocks(blocks, firstObstacle)
+    }
+
+    fun crumbleBlocks(blocks: ArrayList<Block>, obstacle: LoadedObstacle?) {
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
+        val crumblingBlocks = ArrayList<Block>()
+
+        for(block in blocks) {
             if(block.type != Material.AIR && (1..3).random() == 1) {
-                crumblingBlocks.add(Location(loopController.world, x.toDouble(), y.toDouble(), z.toDouble()))
+                crumblingBlocks.add(block)
             }
         }
 
         var runs = 0
         val runnable = object : BukkitRunnable() {
             override fun run() {
+                if(loopController.currentState == LoopController.GameState.PAUSED) return;
                 if(runs >= 10) {
                     this.cancel()
-                    allBlocks.forEach {
+                    blocks.forEach {
                         Bukkit.getOnlinePlayers().forEach { plr ->
-                            plr.sendBlockDamage(it, 0f, (0..1000000000).random())
+                            plr.sendBlockDamage(it.location, 0f, (0..1000000000).random())
                         }
 
-                        val blockData = it.world.getBlockData(it)
+                        val blockData = it.blockData
                         it.world.spawnParticle(
                             Particle.BLOCK,
-                            it,
+                            it.location,
                             20,
                             0.0,
                             0.0,
                             0.0,
                             blockData
                         )
-                        it.block.type = Material.AIR
+                        it.type = Material.AIR
                     }
 
-                    loadedObstacles.remove(firstObstacle)
+                    if(obstacle !== null) {
+                        loadedObstacles.remove(obstacle)
+                    }
+
                     return
                 }
 
                 runs += 1
                 Bukkit.getOnlinePlayers().forEach { plr ->
                     crumblingBlocks.forEach {
-                        if(plr.world == it.world && plr.location.distanceSquared(it) < 64*64) {
-                            plr.sendBlockDamage(it, runs / 10f, (0..1000000000).random())
+                        if(plr.world == it.world && plr.location.distanceSquared(it.location) < 64*64) {
+                            plr.sendBlockDamage(it.location, runs / 10f, (0..1000000000).random())
                         }
                     }
                 }

@@ -28,6 +28,7 @@ For the game world, you need to set a few more fields in the config
 - Player spawn position
 - Obstacle pivot start position
 - Gate start and end positions
+- Spawn block start and end positions
 
 The player spawn is where the players are dropped into the world in the pregame stage.
 
@@ -35,6 +36,8 @@ The obstacle pivot start position is the position where the middle of an obstacl
 
 The gate start and end are 2 positions that should block the player from starting the course. This should separate the player from the obstacle pivot start to prevent them from starting the game early.
 ![gate](./gate.png)
+
+The spawn block start and end are 2 positions that create the bounding box of the entire spawn platform. This allows it to crumble and prevent players from staying on it since only obstacles naturally crumble (and the spawn block is a constant structure, not an obstacle)
 
 To save the world to a template, you can run `/world template save [world_name] (template_name)` which copies the world `world_name` to the worlds template folder with the name `template_name` (or whatever the `world_name` is if it were not provided).
 
@@ -54,5 +57,8 @@ There are 4 obstacle types, make sure you have the specific setup when testing y
 Do keep in mind that obstacles do not rotate, so it's best to build them in your starting world so they're pointed the right way. The redstone and diamond blocks should also be facing the same direction as the starting point.
 
 ![obstacle example.png](obstacle%20example.png)
+
+## Other notes
+This plugin relies on a [resource pack](../ParkourPlaygroundResources.zip) that can be found in the repository root. Without it a lot of interfaces will not render properly! I'd recommended to set as a server resource pack, but people just downloading it themselves can work too.
 
 If you have any questions feel free to open an issue or contact me on the [hackclub slack](https://hackclub.enterprise.slack.com/team/U07A10XBMGQ) (since that's where most people are coming from)

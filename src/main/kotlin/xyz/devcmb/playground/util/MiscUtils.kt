@@ -15,7 +15,9 @@ import org.bukkit.generator.ChunkGenerator
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
+import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ParkourPlayground
+import xyz.devcmb.playground.controllers.LoopController
 import java.util.TimerTask
 import kotlin.math.min
 
@@ -31,9 +33,12 @@ object MiscUtils {
 
     fun countdown(players: Set<Player>, seconds: Int, onFinish: () -> Unit, tick: (time: Int) -> Unit = {}) {
         var timeLeft = seconds
+        val loopController = ControllerDelegate.getController("loopController") as LoopController
 
         object : BukkitRunnable() {
             override fun run() {
+                if(loopController.currentState == LoopController.GameState.PAUSED) return;
+
                 timeLeft -= 1
 
                 val title = when(timeLeft) {
