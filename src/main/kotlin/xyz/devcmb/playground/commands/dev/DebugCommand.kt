@@ -4,6 +4,7 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
@@ -13,6 +14,7 @@ import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "debug")
+@Permission("playground.dev")
 class DebugCommand {
     @Execute(name = "logging subscribe")
     fun executeDebug(@Context player: Player, @Arg loggingLevel: Optional<DebugUtil.DebugLogLevel>) {

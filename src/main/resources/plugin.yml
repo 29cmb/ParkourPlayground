@@ -6,7 +6,7 @@ prefix: ParkourPlayground
 authors: [ DevCmb ]
 description: An open-source parkour server plugin
 website: devcmb.xyz
-depend: [ WorldEdit ]
+depend: [ FastAsyncWorldEdit ]
 permissions:
   playground.dev:
     default: op

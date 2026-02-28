@@ -125,8 +125,6 @@ class WorldController : IController {
         return Bukkit.createWorld(creator)!!
     }
 
-    fun saveWorldToTemplate(world: World) = saveWorldToTemplate(world, null)
-
     fun saveWorldToTemplate(world: World, templateName: String?) {
         var templateWorldName = templateName
 

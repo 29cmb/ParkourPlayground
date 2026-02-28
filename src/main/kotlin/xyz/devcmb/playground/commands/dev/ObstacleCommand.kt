@@ -15,6 +15,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import xyz.devcmb.playground.Constants
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.ObstacleStepException
 import xyz.devcmb.playground.controllers.ObstacleController
@@ -54,6 +55,11 @@ class ObstacleCommand {
 
     @Execute(name = "load")
     fun executeLoad(@Context player: Player, @Arg obstacle: ObstacleController.LoadableObstacle) {
+        if(!Constants.IS_DEVELOPMENT) {
+            player.sendMessage(Component.text("This command can only be executed while developer mode is enabled.", NamedTextColor.RED))
+            return
+        }
+
         val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
         try {
             obstacleController.loadObstacleFromFile(
@@ -70,6 +76,11 @@ class ObstacleCommand {
 
     @Execute(name = "step")
     fun executeStep(@Context sender: CommandSender, @Arg type: Optional<ObstacleController.ObstacleType>) {
+        if(!Constants.IS_DEVELOPMENT) {
+            sender.sendMessage(Component.text("This command can only be executed while developer mode is enabled.", NamedTextColor.RED))
+            return
+        }
+
         val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
         try {
             obstacleController.stepObstacleLoad(type.getOrNull())
@@ -81,6 +92,11 @@ class ObstacleCommand {
 
     @Execute(name = "crumble step")
     fun executeCrumble(@Context sender: CommandSender) {
+        if(!Constants.IS_DEVELOPMENT) {
+            sender.sendMessage(Component.text("This command can only be executed while developer mode is enabled.", NamedTextColor.RED))
+            return
+        }
+
         val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
         obstacleController.crumbleObstacle()
         sender.sendMessage(Component.text("Started crumbling an obstacle!", NamedTextColor.GREEN))
@@ -88,6 +104,11 @@ class ObstacleCommand {
 
     @Execute(name = "crumble speed")
     fun executeSpeed(@Context sender: CommandSender, @Arg speed: Double) {
+        if(!Constants.IS_DEVELOPMENT) {
+            sender.sendMessage(Component.text("This command can only be executed while developer mode is enabled.", NamedTextColor.RED))
+            return
+        }
+
         val obstacleController = ControllerDelegate.getController("obstacleController") as ObstacleController
         obstacleController.currentCrumbleSpeedMultiplier = speed
         Bukkit.broadcast(Component.text("Crumble speed increasing!", NamedTextColor.RED))

@@ -1,13 +1,26 @@
+# A complete setup guide can be found at https://github.com/29cmb/ParkourPlayground
+# The guide occasionally references these fields
+# Every field has a comment annotating what its use is, and the guide may have additional information
+
 lobby:
+  # The persistent world for intermissions
   world: "hub"
+  # The spawn position of the lobby
   position: [0.5,67.0,0.5]
 game:
+  # How long the intermission period lasts
   intermission_length: 30
+  # The position players are teleported to in the game world
   starting_position: [-0.5,67.0,-0.5]
+  # The starting position of the gate that prevents people from starting early
   gate_start: [2,68,7]
+  # The ending position of the gate that prevents people from starting early
   gate_end: [-4,66,7]
+  # The position that obstacles start snapping to
   starting_obstacle_pivot: [-1,65,8]
+  # The y position to eliminate players at (or for a fallback if something goes wrong)
   min_y_fallback: 30
+  # The maximum a player can fall below an obstacles bounding box before respawning them
   y_lenience: 10
   crumble:
     # Base amount of time it takes for an obstacle to crumble
@@ -22,7 +35,18 @@ game:
     # The visual time it takes for an obstacle to crumble
     crumble_time: 5.0
 templates:
+  # The base path for the templates relative to the world container folder
+  # Ex: /templates
   root_path: "templates"
+  # The path to store worlds in
+  # This gets appended to the end of the `root_path`
+  # Ex: /templates/worlds
   worlds_path: "worlds"
+  # The path to store obstacles in
+  # This gets appended to the end of the `root_path`
+  # Ex: /templates/obstacles
   obstacles_path: "obstacles"
+  # The name of the template to clone for the game world
+  # This gets appended to the full worlds path
+  # Ex: /templates/worlds/game
   game_template_world: "game"

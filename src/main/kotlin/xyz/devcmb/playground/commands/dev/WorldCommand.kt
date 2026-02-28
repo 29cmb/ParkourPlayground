@@ -19,6 +19,7 @@ import org.bukkit.generator.ChunkGenerator
 import xyz.devcmb.playground.ControllerDelegate
 import xyz.devcmb.playground.controllers.WorldController
 import java.util.*
+import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "world")
 @Permission("playground.dev")
@@ -41,15 +42,16 @@ class WorldCommand {
     }
 
     @Execute(name = "template save")
-    fun saveTemplate(@Context sender: CommandSender, @Arg world: World, @Flag("-c", "--confirm") confirm: Boolean) {
-        if(!confirm) {
+    fun saveTemplate(@Context sender: CommandSender, @Arg world: World, @Arg name: Optional<String>, @Flag("-c", "--confirm") confirm: Boolean) {
+        val name = name.getOrNull()
+        if(name == null && !confirm) {
             sender.sendMessage(Component.text("This will override the existing template! Use the --confirm or -c flag to continue!", NamedTextColor.YELLOW))
             return
         }
 
         val worldController = ControllerDelegate.getController("worldController") as WorldController
         try {
-            worldController.saveWorldToTemplate(world)
+            worldController.saveWorldToTemplate(world, name)
             sender.sendMessage(Component.text("Saved world template successfully!", NamedTextColor.GREEN))
         } catch(e: Exception) {
             sender.sendMessage(Component.text("An error occurred when trying to save the template world: ${e.message}", NamedTextColor.RED))

@@ -59,10 +59,10 @@ class ActiveGameScoreboard(val player: Player) : IScoreboard {
             playerPlacement >= lastIndex -> {
                 for (i in maxOf(0, lastIndex - 1)..lastIndex) {
                     val score = sortedScores[i]
-                    var plrName = Format.formatPlayerName(score.key)
-                    if(!loopController.alivePlayers.contains(score.key)) {
-                        plrName = plrName.color(NamedTextColor.GRAY)
-                    }
+                    var plrName = Format.formatPlayerName(
+                        score.key,
+                        if (loopController.alivePlayers.contains(score.key)) NamedTextColor.WHITE else NamedTextColor.GRAY
+                    )
 
                     leaderboard.add(
                         Component.empty()
@@ -77,10 +77,10 @@ class ActiveGameScoreboard(val player: Player) : IScoreboard {
             else -> {
                 for (i in (playerPlacement - 1)..(playerPlacement + 1)) {
                     val score = sortedScores[i]
-                    var plrName = Format.formatPlayerName(score.key)
-                    if(!loopController.alivePlayers.contains(score.key)) {
-                        plrName = plrName.color(NamedTextColor.GRAY)
-                    }
+                    var plrName = Format.formatPlayerName(
+                        score.key,
+                        if (loopController.alivePlayers.contains(score.key)) NamedTextColor.WHITE else NamedTextColor.GRAY
+                    )
 
                     leaderboard.add(
                         Component.empty()
