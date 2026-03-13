@@ -8,6 +8,8 @@ lobby:
   # The spawn position of the lobby
   position: [0.5,67.0,0.5]
 game:
+  # The minimum amount of players required to start the game
+  minimum_players: 2
   # How long the intermission period lasts
   intermission_length: 30
   # The position players are teleported to in the game world

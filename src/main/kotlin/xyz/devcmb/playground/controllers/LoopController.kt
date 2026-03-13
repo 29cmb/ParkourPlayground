@@ -67,6 +67,9 @@ class LoopController : IController {
 
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
+
+        @field:Configurable("game.minimum_players")
+        var minimumPlayers: Int = 2
     }
 
     override fun init() {
@@ -74,7 +77,7 @@ class LoopController : IController {
     }
 
     fun setup() {
-        if(Bukkit.getOnlinePlayers().size < (if(Constants.IS_DEVELOPMENT) 1 else 2)) {
+        if(Bukkit.getOnlinePlayers().size < minimumPlayers) {
             playerWaiting()
             return
         }
@@ -99,7 +102,7 @@ class LoopController : IController {
             override fun run() {
                 if(currentState == GameState.PAUSED) return;
 
-                if(Bukkit.getOnlinePlayers().size < (if(Constants.IS_DEVELOPMENT) 1 else 2)) return;
+                if(Bukkit.getOnlinePlayers().size < minimumPlayers) return;
                 cancel()
                 playerWaitingRunnable = null
                 setup()
@@ -116,7 +119,7 @@ class LoopController : IController {
             override fun run() {
                 if(currentState == GameState.PAUSED) return;
 
-                if(Bukkit.getOnlinePlayers().size < (if(Constants.IS_DEVELOPMENT) 1 else 2)) {
+                if(Bukkit.getOnlinePlayers().size < minimumPlayers) {
                     cancel()
                     countdownRunnable = null
                     countdown = intermissionLength
