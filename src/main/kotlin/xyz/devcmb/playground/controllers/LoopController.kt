@@ -14,6 +14,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.playground.Constants
 import xyz.devcmb.playground.ControllerDelegate
@@ -361,6 +362,20 @@ class LoopController : IController {
         ) return
 
         eliminatePlayer(event.player)
+    }
+
+    @EventHandler
+    fun playerSpawnEvent(event: PlayerRespawnEvent) {
+        if(!allowedStates.contains(currentState) || (currentState == GameState.PAUSED && !allowedStates.contains(prePauseState))) return
+
+        val player = event.player
+        player.gameMode = GameMode.ADVENTURE
+        event.respawnLocation = Location(
+            Bukkit.getWorld(lobbyWorld),
+            lobbySpawn.get(0),
+            lobbySpawn.get(1),
+            lobbySpawn.get(2)
+        )
     }
 
     enum class GameState {
