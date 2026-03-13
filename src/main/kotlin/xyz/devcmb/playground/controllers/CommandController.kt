@@ -31,7 +31,6 @@ class CommandController : IController {
             .argument(ObstacleController.ObstacleType::class.java, ObstacleTypeArgument())
             .argument(ObstacleController.LoadableObstacle::class.java, LoadableObstacleArgument())
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
-            .message(LiteMessages.INVALID_USAGE, Component.text("Invalid command usage!", NamedTextColor.RED))
             .build()
     }
 }
