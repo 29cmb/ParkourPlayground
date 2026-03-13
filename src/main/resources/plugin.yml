@@ -1,5 +1,5 @@
 name: ParkourPlayground
-version: '1.0.0'
+version: '1.0.1'
 main: xyz.devcmb.playground.ParkourPlayground
 api-version: '1.21.11'
 prefix: ParkourPlayground

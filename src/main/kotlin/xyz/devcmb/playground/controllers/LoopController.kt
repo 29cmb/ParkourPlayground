@@ -335,10 +335,10 @@ class LoopController : IController {
         setup()
     }
 
+    val allowedStates = setOf(GameState.PRELOAD, GameState.PREPARING_WORLD, GameState.PLAYER_WAITING, GameState.PAUSED, GameState.INTERMISSION)
     @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
-        val allowedStates = setOf(GameState.PRELOAD, GameState.PREPARING_WORLD, GameState.PLAYER_WAITING, GameState.PAUSED)
         if(!allowedStates.contains(currentState) || (currentState == GameState.PAUSED && !allowedStates.contains(prePauseState))) {
             player.gameMode = GameMode.SPECTATOR
             player.teleport(Location(world, startPosition[0], startPosition[1], startPosition[2]))
@@ -356,6 +356,10 @@ class LoopController : IController {
 
     @EventHandler
     fun playerLeave(event: PlayerQuitEvent) {
+        if(
+            allowedStates.contains(currentState) || (currentState == GameState.PAUSED && allowedStates.contains(prePauseState))
+        ) return
+
         eliminatePlayer(event.player)
     }
 
