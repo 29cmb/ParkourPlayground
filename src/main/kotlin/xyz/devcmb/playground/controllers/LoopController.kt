@@ -162,7 +162,7 @@ class LoopController : IController {
         Bukkit.getOnlinePlayers().forEach { player ->
             alivePlayers.add(player)
             addPlayerScore(player, 0)
-
+            player.spigot().respawn()
             player.teleport(Location(world, startPosition.get(0), startPosition.get(1), startPosition.get(2)))
             player.gameMode = GameMode.ADVENTURE
         }
