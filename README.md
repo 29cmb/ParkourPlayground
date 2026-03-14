@@ -28,5 +28,8 @@ Obstacles can be 1 of 4 types, with each giving a unique playstyle
 
 Once all but 1 player have been eliminated, the game transitions to the **game end** state where a leaderboard of the top 3 scorers is displayed. After a few seconds, it cleans up everything from the game and returns to the intermission state.
 
+### Available on modrinth!
+You can download the latest version of the plugin over on [modrinth](https://modrinth.com/plugin/parkour-playground)!
+
 ### Contributing
 If you want to contribute to the project, simply make your code change and open a pull request. Doubt anyone will want to, but it's important nonetheless.
